@@ -54,3 +54,60 @@ git push origin nombre-de-tu-rama
 ===========================================================================================================================
 ===========================================================================================================================
 este txt esta sujeto a cambios AUNQUE todo deberia funcionar bien
+
+¡¡¡HOLA!!! 
+- si estan leyendo esto significa que quieren instalar las carpetas de este github para trabajar en el proyecto de
+  MegaNet™ en sus computadoras, pero hay que hacer un par de pasos para que puedan instalarlo e ir realizando cambios
+
+===========================================================================================================================
+===========================================================================================================================
+
+ANTES QUE NADA 
+tienen que tener instalado Node.js (un icono de un hexagono verde) y GIT (si tienen git bash es lo mismo)
+
+PASOS PARA INSTALAR LAS CARPETAS DEL REPOSITORIO EN TU COMPUTADORA
+1. van al REPOSITORIO DE GITHUB (el que compartio leon)
+2. hacen clic en el BOTON VERDE que dice CODE
+3. COPIAN LA URL QUE SALE (https://github.com/Oliveraleon/MegaNet.git)
+4. abren VISUAL STUDIO CODE
+5. abren la BARRA DE COMANDOS (CTRL + SHIFT + P) o TOCAN ARRIBA Y PONEN "Show and run commands >"
+6. escriben y seleccionan GIT CLONE
+7. COPIAN LA URL AHI
+8. eligen UNA CARPETA en donde se va a guardar el proyecto (click derecho y nuevo para crear una nueva ahi)
+9. Cuando termine, HACER CLICK en OPEN para abrir el proyecto
+
+si no me confundi en nada deberian PODER TRABAJAR si les tira un error busquenlo en google xd
+
+===========================================================================================================================
+===========================================================================================================================
+
+UNA COSA MAS
+un par de cosas para que todos podamos trabajar BIEN
+DESCARGAR LIBRERIAS (ESTO SOLO SE TIENE QUE HACER UNA VEZ)
+el git no sube la carpeta node_modules porque no se asi que hay que descargarlas
+EN LA TERMINAL:
+1. cd backend
+   npm install
+
+2. cd ../frontend
+   npm install
+
+ANTES de empezar a PROGRAMAR cada dia hay que SINCRONIZAR LOS CAMBIOS
+en la TERMINAL de visual studio code (CTRL + J) escribir los siguientes comandos
+
+git checkout main
+git pull origin main
+
+NO TRABAJAR EN EL MAIN
+la rama MAIN es la version final del proyecto, hay que trabajar en RAMAS SECUNDARIAS
+COMO CREAR UNA RAMA SECUNDARIA
+1. abrir la TERMINAL (CTRL + J) 
+2. crear la RAMA con este comando: git checkout -b nombre-de-tu-rama
+3. una vez que YA SEPAS QUE TODO FUNCIONA BIEN hay que subir los cambios con los siguientes comandos
+git add .
+git commit -m "Terminé el login de usuario"
+git push origin nombre-de-tu-rama
+
+===========================================================================================================================
+===========================================================================================================================
+este txt esta sujeto a cambios AUNQUE todo deberia funcionar bien
