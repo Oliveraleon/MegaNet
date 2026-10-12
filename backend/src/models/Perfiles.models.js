@@ -23,6 +23,14 @@ const Perfiles = sequelize.define(
         profileBanner:{
             type: DataTypes.STRING,
         },
+        userId:{
+            type: DataTypes.INTEGER,
+            allowNull: false,
+            references: {
+                model: "Users",
+                key: "id",
+            },
+        },
     },
     {
         tableName: "Perfiles",
