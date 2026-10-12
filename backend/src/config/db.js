@@ -3,7 +3,7 @@ const { Sequelize } = require ("sequelize");
 const sequelize = new Sequelize ("MegaNet", "root", "123",{
     host: "localhost",
     dialect: "mysql",
-    loggin: false,
+    logging: false,
 });
 
 module.exports = {
