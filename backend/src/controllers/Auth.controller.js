@@ -62,7 +62,7 @@ const login = async (req, res) => {
         const profile = await Profile.findOne({ where: { userId: user.id } });
 
         const token = jwt.sign(
-            { id: user.id, email: user.email, rol: user.rol },
+            { id: user.id, email: user.email},
             JWT_SECRET,
             { expiresIn: "2h" }
         );
@@ -73,7 +73,6 @@ const login = async (req, res) => {
             user: {
                 id: user.id,
                 email: user.email,
-                rol: user.rol,
                 username: profile ? profile.username : null,
             },
         });
