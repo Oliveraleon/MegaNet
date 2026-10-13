@@ -26,7 +26,7 @@ function Register() {
             <div className="register-left">
                 <div className="brand-content">
                     <h1>MegaNet</h1>
-                    <p>Compartí lo que quieras y comunícate con quien sea</p>
+                    <p>Compartí lo que quieras - Comunícate con quien sea</p>
                     <img 
                         src="Register1.jpg" 
                         alt="Comunidad MegaNet" 
