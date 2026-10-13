@@ -6,7 +6,7 @@ html, body {
     overflow: hidden;
 }
 
-/* Contenedor principal en dos mitades */
+
 .register-layout {
     display: flex;
     height: calc(100vh - 73px);
@@ -14,7 +14,6 @@ html, body {
     overflow: hidden;
 }
 
-/* Lado izquierdo (Imagen y textos) */
 .register-left {
     flex: 1;
     background: linear-gradient(135deg, #ff004e 25%, #00d827 75%);
@@ -53,7 +52,6 @@ html, body {
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
 }
 
-/* Lado derecho (Formulario centrado) */
 .register-right {
     flex: 1;
     display: flex;
@@ -64,7 +62,6 @@ html, body {
     box-sizing: border-box;
 }
 
-/* Tarjeta flotante compacta */
 .register-card {
     background: #ffffff;
     padding: 2rem 2.5rem;
@@ -90,7 +87,6 @@ html, body {
     text-align: center;
 }
 
-/* Estilos de los inputs para que no queden gigantes */
 .form-group {
     margin-bottom: 1rem;
     display: flex;
@@ -113,7 +109,7 @@ html, body {
     width: 100%;
     box-sizing: border-box;
     outline: none;
-    background-color: #1a1a1a; /* Manteniendo tu estilo oscuro en los inputs */
+    background-color: #1a1a1a; 
     color: #ffffff;
     transition: border-color 0.2s, box-shadow 0.2s;
 }
@@ -158,7 +154,6 @@ html, body {
     text-decoration: underline;
 }
 
-/* Responsivo para celulares */
 @media (max-width: 768px) {
     .register-left {
         display: none;
