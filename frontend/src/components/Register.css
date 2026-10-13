@@ -1,96 +1,147 @@
-.register-container {
+
+.register-layout {
+    display: flex;
+    height: 100vh;
+    width: 100%;
+    overflow: hidden;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    overflow: hidden; /* <--- Esto corta cualquier contenido extra o espacio fantasma */
+}
+
+.register-left {
+    flex: 1;
+    background: linear-gradient(135deg, #ff004e 25%, #00d827 75%);
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 80vh;
-    background-color: #f4f6f9;
+    color: white;
+    padding: 3rem;
+    text-align: center;
+}
+
+.brand-content h1 {
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+}
+
+.brand-content p {
+    font-size: 1.1rem;
+    margin-bottom: 2rem;
+    opacity: 0.9;
+}
+
+.register-image {
+    max-width: 100%;
+    width: 450px;
+    height: auto;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.register-right {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #f8fafc;
+    padding: 2rem;
 }
 
 .register-card {
     background: #ffffff;
     padding: 2.5rem;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
     width: 100%;
     max-width: 400px;
+}
+
+.register-title {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.8rem;
+    color: #333333;
+    text-align: center;
+    font-weight: bold;
+}
+
+.register-subtitle {
+    margin: 0 0 1.5rem 0;
+    font-size: 0.9rem;
+    color: #666666;
     text-align: center;
 }
 
-.register-card h2 {
-    margin-bottom: 0.5rem;
-    color: #333;
-}
-
-.subtitle {
-    color: #666;
-    font-size: 0.9rem;
-    margin-bottom: 1.5rem;
-}
-
-.input-group {
+.form-group {
+    margin-bottom: 1.25rem;
+    display: flex;
+    flex-direction: column;
     text-align: left;
-    margin-bottom: 1rem;
 }
 
-.input-group label {
-    display: block;
+.form-group label {
+    margin-bottom: 0.5rem;
     font-size: 0.85rem;
     font-weight: 600;
-    color: #444;
-    margin-bottom: 0.3rem;
+    color: #444444;
 }
 
-.input-group input {
-    width: 100%;
-    padding: 0.75rem;
-    border: 1px solid #ddd;
-    border-radius: 6px;
+.form-group input {
+    padding: 0.75rem 1rem;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
     font-size: 1rem;
     outline: none;
-    transition: border-color 0.2s;
-    box-sizing: border-box;
+    transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.input-group input:focus {
-    border-color: #007bff;
+.form-group input:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
 }
 
-.btn-submit {
+.register-button {
     width: 100%;
-    padding: 0.75rem;
-    background-color: #007bff;
+    padding: 0.85rem;
+    background-color: #eb3b6f;
     color: white;
     border: none;
-    border-radius: 6px;
+    border-radius: 8px;
     font-size: 1rem;
-    font-weight: bold;
+    font-weight: 600;
     cursor: pointer;
-    margin-top: 1rem;
     transition: background-color 0.2s;
+    margin-top: 0.5rem;
 }
 
-.btn-submit:hover {
-    background-color: #0056b3;
-}
-
-.warning-text {
-    color: #d9534f;
-    font-size: 0.85rem;
-    margin-top: 1rem;
+.register-button:hover {
+    background-color: #3ff05f;
 }
 
 .register-footer {
     margin-top: 1.5rem;
-    font-size: 0.9rem;
-    color: #666;
+    text-align: center;
+    font-size: 0.85rem;
+    color: #666666;
 }
 
 .register-footer a {
-    color: #007bff;
+    color: #4e1bdb;
     text-decoration: none;
     font-weight: 600;
 }
 
 .register-footer a:hover {
     text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+    .register-left {
+        display: none;
+    }
 }

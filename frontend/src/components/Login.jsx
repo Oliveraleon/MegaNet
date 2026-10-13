@@ -38,7 +38,7 @@ function Login() {
                         <input
                             type="email"
                             name="email"
-                            placeholder="correo@ejemplo.com"
+                            placeholder="Correo electrónico"
                             value={form.email}
                             onChange={handleChange}
                             required
@@ -62,7 +62,7 @@ function Login() {
                     <button type="submit" className="btn-submit">Entrar</button>
                 </form>
 
-                <div className="register-footer">
+                <div className="login-footer">
                     <p>¿No tenés cuenta? <a href="/register">Registrate</a></p>
                 </div>
             </div>
