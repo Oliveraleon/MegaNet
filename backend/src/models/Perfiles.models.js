@@ -27,7 +27,7 @@ const Perfiles = sequelize.define(
             type: DataTypes.INTEGER,
             allowNull: false,
             references: {
-                model: "Users",
+                model: "Usuarios",
                 key: "id",
             },
         },
