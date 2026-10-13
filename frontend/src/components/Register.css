@@ -1,15 +1,21 @@
-/* Contenedor principal que divide la pantalla en 2 */
+
 .register-layout {
     display: flex;
-    height: calc(100vh - 100px);
+    height: 100vh;
     width: 100%;
     overflow: hidden;
 }
 
-/* Lado izquierdo (Imágenes y texto institucional) */
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    overflow: hidden; /* <--- Esto corta cualquier contenido extra o espacio fantasma */
+}
+
 .register-left {
     flex: 1;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #ff004e 25%, #00d827 75%);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -38,7 +44,6 @@
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
 }
 
-/* Lado derecho (El formulario centrado) */
 .register-right {
     flex: 1;
     display: flex;
@@ -57,7 +62,6 @@
     max-width: 400px;
 }
 
-/* Estilos de textos, inputs y botones de tu tarjeta */
 .register-title {
     margin: 0 0 0.5rem 0;
     font-size: 1.8rem;
@@ -104,7 +108,7 @@
 .register-button {
     width: 100%;
     padding: 0.85rem;
-    background-color: #667eea;
+    background-color: #eb3b6f;
     color: white;
     border: none;
     border-radius: 8px;
@@ -116,7 +120,7 @@
 }
 
 .register-button:hover {
-    background-color: #5a6fe2;
+    background-color: #3ff05f;
 }
 
 .register-footer {
@@ -127,7 +131,7 @@
 }
 
 .register-footer a {
-    color: #667eea;
+    color: #4e1bdb;
     text-decoration: none;
     font-weight: 600;
 }
@@ -136,7 +140,6 @@
     text-decoration: underline;
 }
 
-/* Responsivo: Si la pantalla es chica (celulares), se oculta el lado de la imagen para que no rompa */
 @media (max-width: 768px) {
     .register-left {
         display: none;

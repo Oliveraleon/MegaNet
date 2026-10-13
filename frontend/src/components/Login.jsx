@@ -1,21 +1,18 @@
-import "./Register.css"
 import "./Login.css"
 
 function Login() {
     return (
-        <div className="register-container login-container">
-            <div className="neon-line"></div>
+        <div className="login-container">
+            <div className="login-card">
+                <h2 className="login-title">Iniciar sesión</h2>
+                <p className="login-subtitle">Ingresá tus datos para continuar</p>
 
-            <div className="register-card">
-                <h2>👋 Bienvenido a MegaNet</h2>
-                <p className="subtitle">Iniciá sesión para continuar</p>
-
-                <form>
+                <form className="login-form">
                     <div className="input-group">
                         <label>Correo electrónico</label>
                         <input 
                             type="email" 
-                            placeholder="correo@ejemplo.com" 
+                            placeholder="Correo electrónico" 
                             required 
                         />
                     </div>
@@ -24,15 +21,15 @@ function Login() {
                         <label>Contraseña</label>
                         <input 
                             type="password" 
-                            placeholder="Tu contraseña" 
+                            placeholder="Contraseña" 
                             required 
                         />
                     </div>
 
-                    <button type="submit" className="btn-submit">Iniciar sesión</button>
+                    <button type="submit" className="btn-submit">Ingresar</button>
                 </form>
 
-                <div className="register-footer">
+                <div className="login-footer">
                     <p>¿No tenés una cuenta? <a href="/register">Registrate</a></p>
                 </div>
             </div>

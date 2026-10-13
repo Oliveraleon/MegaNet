@@ -8,7 +8,7 @@ function App() {
     <>
       <nav style={{ padding: "1rem 2rem", background: "#ffffff", borderBottom: "1px solid #eaeaea" }}>
         <Link to="/home">
-          <img src="/placeholder.png" alt="MegaNet Logo" style={{ height: "40px" }} />
+          <img src="/MegaNet_logo.png" alt="MegaNet Logo" style={{ height: "40px" }} />
         </Link>
       </nav>
 

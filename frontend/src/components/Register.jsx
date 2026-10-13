@@ -3,21 +3,18 @@ import "./Register.css"
 function Register() {
     return (
         <div className="register-layout">
-            {/* Lado izquierdo: Banner, ilustraciones o imágenes */}
             <div className="register-left">
                 <div className="brand-content">
                     <h1>MegaNet</h1>
-                    <p>Conectá con tu comunidad y compartí tus proyectos.</p>
-                    {/* Podés cambiar esta URL por cualquier imagen que quieras */}
+                    <p>Compartí lo que quieras y comunícate con quien sea</p>
                     <img 
-                        src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=600&q=80" 
+                        src="Register1.jpg" 
                         alt="Comunidad MegaNet" 
                         className="register-image" 
                     />
                 </div>
             </div>
 
-            {/* Lado derecho: Tu caja de registro */}
             <div className="register-right">
                 <div className="register-card">
                     <h2 className="register-title">Crear cuenta</h2>
