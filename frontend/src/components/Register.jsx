@@ -77,8 +77,6 @@ function Register() {
                         />
                     </div>
 
-                    {error && <p style={{ color: "red" }}>{error}</p>}
-
                         <button type="submit" className="register-button">Registrarse</button>
                     </form>
 

@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { useNavigate, useLocation } from "react-router-dom"
 import { iniciarSesion } from "../api/auth"
-import "./Register.css"
+import "./Login.css"
 
 function Login() {
     const [form, setForm] = useState({ email: "", password: "" })
@@ -23,9 +23,9 @@ function Login() {
     }
 
     return (
-        <div className="register-container">
-            <div className="register-card">
-                <h2>👋 Bienvenido a MegaNet</h2>
+        <div className="login-container">
+            <div className="login-card">
+                <h2>Iniciar sesión</h2>
                 <p className="subtitle">Iniciá sesión para continuar</p>
 
                 {location.state?.registrado && (

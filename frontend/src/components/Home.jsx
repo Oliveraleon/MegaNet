@@ -4,7 +4,7 @@ import { Navigate, useNavigate } from "react-router-dom"
 import { cerrarSesion, getUsuario, estaLogueado } from "../api/auth"
 
 function Home() {
-}
+
     const navigate = useNavigate()
     const user = getUsuario()
     
@@ -48,5 +48,6 @@ function Home() {
         </div>
     )
 }
+
 
 export default Home
