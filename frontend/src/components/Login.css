@@ -1,38 +1,114 @@
 .login-container {
     position: relative;
     overflow: hidden;
-    min-height: 100vh;
+    height: calc(100vh - 73px); /* Usa height fija en lugar de min-height para que no se expanda de más */
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(135deg, #00d827 25%, #ff004e 75%); 
 }
 
-.login-container .register-card {
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    overflow: hidden; /* <--- Esto corta cualquier contenido extra o espacio fantasma */
+}
+
+/* Tarjeta central más ancha y con diseño oscuro */
+.login-card {
     position: relative;
-    z-index: 1;
+    z-index: 2; /* Asegura que la tarjeta esté por encima de la línea de neón */
+    background-color: black; /* Si la querés blanca por dentro como el register, poné #ffffff, si la querés oscura poné #121212 */
+    color: #333333;
+    padding: 2.5rem;
+    border-radius: 16px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    width: 100%;
+    max-width: 900px; /* <--- Aumentado un poco más de ancho como pediste */
+    margin: 1rem;
 }
 
-.neon-line {
-    position: absolute;
-    top: 50%;
-    left: -25%;
-    width: 150%;
-    height: 4px;
-    border-radius: 4px;
-    background: linear-gradient(90deg, transparent, #00e5ff 20%, #7df9ff 50%, #00e5ff 80%, transparent);
-    box-shadow:
-        0 0 8px #00e5ff,
-        0 0 20px #00e5ff,
-        0 0 45px rgba(0, 229, 255, 0.7);
-    transform: rotate(-30deg);
-    pointer-events: none;
-    animation: neon-float 4s ease-in-out infinite;
+/* Títulos y textos dentro de la tarjeta */
+.login-title {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.8rem;
+    color: #ffffff;
+    text-align: center;
+    font-weight: bold;
 }
 
-@keyframes neon-float {
-    0%, 100% {
-        transform: rotate(-30deg) translateY(-18px);
-        opacity: 0.75;
-    }
-    50% {
-        transform: rotate(-30deg) translateY(18px);
-        opacity: 1;
-    }
+.login-subtitle {
+    margin: 0 0 1.5rem 0;
+    font-size: 0.9rem;
+    color: #dbdbdb;
+    text-align: center;
 }
+
+/* Grupos de inputs */
+.input-group {
+    margin-bottom: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+}
+
+.input-group label {
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #444444;
+}
+
+.input-group input {
+    padding: 0.75rem 1rem;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.input-group input:focus {
+    border-color: #00e5ff;
+    box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.15);
+}
+
+/* Botón de envío */
+.btn-submit {
+    width: 100%;
+    padding: 0.85rem;
+    background-color: #eb3b6f;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    margin-top: 0.5rem;
+}
+
+.btn-submit:hover {
+    background-color: #3ff05f;
+}
+
+/* Footer de la tarjeta */
+.login-footer {
+    margin-top: 1.5rem;
+    text-align: center;
+    font-size: 0.85rem;
+    color: #666666;
+}
+
+.login-footer a {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.login-footer a:hover {
+    text-decoration: underline;
+}
+
