@@ -1,7 +1,7 @@
 .login-container {
     position: relative;
     overflow: hidden;
-    height: calc(100vh - 73px); /* Usa height fija en lugar de min-height para que no se expanda de más */
+    height: calc(100vh - 73px);
     width: 100%;
     display: flex;
     justify-content: center;
@@ -13,77 +13,84 @@ html, body {
     margin: 0;
     padding: 0;
     height: 100vh;
-    overflow: hidden; /* <--- Esto corta cualquier contenido extra o espacio fantasma */
+    overflow: hidden;
 }
 
-/* Tarjeta central más ancha y con diseño oscuro */
+/* Tarjeta central oscura y ancha */
 .login-card {
     position: relative;
-    z-index: 2; /* Asegura que la tarjeta esté por encima de la línea de neón */
-    background-color: black; /* Si la querés blanca por dentro como el register, poné #ffffff, si la querés oscura poné #121212 */
-    color: #333333;
-    padding: 2.5rem;
+    z-index: 2;
+    background-color: black;
+    color: #ffffff; /* Color general blanco para toda la tarjeta */
+    padding: 3rem;
     border-radius: 16px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
     width: 100%;
-    max-width: 900px; /* <--- Aumentado un poco más de ancho como pediste */
+    max-width: 600px; /* Ancho cómodo y equilibrado */
     margin: 1rem;
 }
 
-/* Títulos y textos dentro de la tarjeta */
+/* Título principal más grande y CENTRADO */
 .login-title {
     margin: 0 0 0.5rem 0;
-    font-size: 1.8rem;
+    font-size: 2.4rem; /* <--- Más grande */
     color: #ffffff;
-    text-align: center;
+    text-align: center; /* <--- Centrado */
     font-weight: bold;
 }
 
 .login-subtitle {
-    margin: 0 0 1.5rem 0;
-    font-size: 0.9rem;
-    color: #dbdbdb;
-    text-align: center;
+    margin: 0 0 2rem 0;
+    font-size: 1rem;
+    color: #cccccc;
+    text-align: center; /* <--- Centrado */
 }
 
 /* Grupos de inputs */
 .input-group {
-    margin-bottom: 1.25rem;
+    margin-bottom: 1.5rem;
     display: flex;
     flex-direction: column;
     text-align: left;
 }
 
+/* Labels de los inputs en blanco */
 .input-group label {
     margin-bottom: 0.5rem;
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     font-weight: 600;
-    color: #444444;
+    color: #ffffff; /* <--- Cambiado a blanco para que se vea bien en el fondo negro */
 }
 
 .input-group input {
-    padding: 0.75rem 1rem;
-    border: 1px solid #d1d5db;
+    padding: 0.85rem 1rem;
+    background-color: #1a1a1a; /* Fondo oscuro para el input */
+    border: 1px solid #444444; /* Borde sutil */
+    color: #ffffff; /* Texto que escribas en blanco */
     border-radius: 8px;
     font-size: 1rem;
     outline: none;
     transition: border-color 0.2s, box-shadow 0.2s;
 }
 
+.input-group input::placeholder {
+    color: #777777; /* Color del placeholder para que no moleste */
+}
+
 .input-group input:focus {
     border-color: #00e5ff;
-    box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.15);
+    box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.25);
 }
 
 /* Botón de envío */
 .btn-submit {
     width: 100%;
-    padding: 0.85rem;
+    padding: 0.95rem;
     background-color: #eb3b6f;
     color: white;
     border: none;
     border-radius: 8px;
-    font-size: 1rem;
+    font-size: 1.05rem;
     font-weight: 600;
     cursor: pointer;
     transition: background-color 0.2s;
@@ -98,12 +105,12 @@ html, body {
 .login-footer {
     margin-top: 1.5rem;
     text-align: center;
-    font-size: 0.85rem;
-    color: #666666;
+    font-size: 0.9rem;
+    color: #cccccc; /* <--- Texto en blanco/gris claro */
 }
 
 .login-footer a {
-    color: #667eea;
+    color: #00e5ff; /* <--- Un celeste brillante que combina genial con el fondo oscuro */
     text-decoration: none;
     font-weight: 600;
 }
@@ -111,4 +118,3 @@ html, body {
 .login-footer a:hover {
     text-decoration: underline;
 }
-
