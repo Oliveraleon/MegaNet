@@ -1,6 +1,4 @@
-//const { Sequelize } = require("../config/db.js");
-const User = require("../models/Usuarios.models.js");
-const Profile = require("../models/Perfiles.models.js");
+const User = require("../models/usuarios.models.js");
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 
@@ -16,13 +14,12 @@ const register = async (req, res) => {
     if (existingUser) {
         return res.status(400).json({ message: "El usuario ya esta registrado"});
     }
-    const existingProfile = await Profile.findOne({where: {username}});
+    const existingProfile = await User.findOne({where: {username}});
     if(existingProfile){
         return res.status(400).json({message: "El nombre de usuario no esta disponible"});
     }
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await User.create({ email, password: hashedPassword });
-    await Profile.create({ username, userId: user.id });
+    const user = await User.create({ username, email, password: hashedPassword });
     const token = jwt.sign(
         { id: user.id, email: user.email },
         JWT_SECRET,
@@ -59,8 +56,6 @@ const login = async (req, res) => {
             return res.status(401).json({ message: "Credenciales inválidas" });
         }
 
-        const profile = await Profile.findOne({ where: { userId: user.id } });
-
         const token = jwt.sign(
             { id: user.id, email: user.email},
             JWT_SECRET,
@@ -73,7 +68,7 @@ const login = async (req, res) => {
             user: {
                 id: user.id,
                 email: user.email,
-                username: profile ? profile.username : null,
+                username: user.username,
             },
         });
     } catch (error) {

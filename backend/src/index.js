@@ -1,8 +1,6 @@
 const express = require("express")
 const cors = require("cors")
 const { sequelize } = require("./config/db")
-const User = require("./models/Usuarios.models.js");
-const Profile = require("./models/Perfiles.models.js");
 const userRoute = require("./routes/Auth.routes.js");
 require("./models/index.js");
 const server = express()
