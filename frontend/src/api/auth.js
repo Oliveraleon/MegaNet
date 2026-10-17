@@ -11,8 +11,11 @@ async function enviar(ruta, datos) {
   return data;
 }
 
-export function registrar({ username, email, password }) {
-  return enviar("/register", { username, email, password });
+export async function registrar({ username, email, password }) {
+  const data = await enviar("/register", { username, email, password });
+  localStorage.setItem("token", data.token);
+  localStorage.setItem("user", JSON.stringify(data.user));
+  return data;
 }
 
 export async function iniciarSesion({ email, password }) {

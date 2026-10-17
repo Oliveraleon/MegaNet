@@ -12,7 +12,7 @@ server.use('/users', userRoute)
 
 server.listen(3000, async()=>{
     await sequelize.authenticate()
-    await sequelize.sync({force: false})
+    await sequelize.sync({alter: true})
     console.log("El server esta ON");
     
 })
