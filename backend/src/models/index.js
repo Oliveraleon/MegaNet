@@ -7,7 +7,4 @@ Usuarios.hasMany(Publicaciones, { foreignKey: "userId", as: "publicaciones" });
 Publicaciones.belongsTo(Usuarios, { foreignKey: "userId", as: "autor" });
 
 
-Seguidores.belongsTo(Usuarios, { foreignKey: "followerId", as: "seguidor" });
-Seguidores.belongsTo(Usuarios, { foreignKey: "followedId", as: "seguido" });
-
 module.exports = { Usuarios, Publicaciones, Seguidores };

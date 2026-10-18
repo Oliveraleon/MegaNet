@@ -1,32 +1,34 @@
 import "./Home.css"
 
-import { useCallback, useEffect, useState } from "react"
+import {useEffect, useState } from "react"
 import { Navigate } from "react-router-dom"
 import { estaLogueado } from "../api/auth"
-import { getSeguidores, getSiguiendo } from "../api/social"
+import axios from "axios"
 import FollowButton from "./FollowButton"
 
 function Conexiones() {
     const [tab, setTab] = useState("seguidores")
     const [seguidores, setSeguidores] = useState([])
     const [siguiendo, setSiguiendo] = useState([])
-    const [error, setError] = useState("")
+    const [seguidos, setSeguidos] = useState([])
 
-    const cargar = useCallback(async () => {
-        if (!estaLogueado()) return
-        try {
-            setError("")
-            const [a, b] = await Promise.all([getSeguidores(), getSiguiendo()])
-            setSeguidores(a)
-            setSiguiendo(b)
-        } catch (err) {
-            setError("No se pudieron cargar tus conexiones.")
-        }
-    }, [])
+    const cargar = async () => {
+        const token = localStorage.getItem("token")
+        const config = { headers: { Authorization: "Bearer " + token } }
+
+        const res1 = await axios.get("http://localhost:3000/users/seguidores", config)
+        const res2 = await axios.get("http://localhost:3000/users/siguiendo", config)
+
+        setSeguidores(res1.data.usuarios)
+        setSiguiendo(res2.data.usuarios)
+        setSeguidos(res2.data.seguidos)
+    }
 
     useEffect(() => {
+        if (estaLogueado()) {
         cargar()
-    }, [cargar])
+        }
+    }, [])
 
     if (!estaLogueado()) return <Navigate to="/login" replace />
 
@@ -50,9 +52,8 @@ function Conexiones() {
                     </button>
                 </div>
 
-                {error && <p className="home-error">{error}</p>}
 
-                {!error && lista.length === 0 && (
+                {lista.length === 0 && (
                     <p className="home-empty">
                         {tab === "seguidores" ? "Todavía nadie te sigue." : "Todavía no seguís a nadie."}
                     </p>
@@ -62,14 +63,13 @@ function Conexiones() {
                     <div className="user-row" key={u.id}>
                         <div className="post-author">
                             <div className="avatar">
-                                {u.profilePicture ? <img src={u.profilePicture} alt="" /> : u.username[0].toUpperCase()}
-                            </div>
+                                {u.username[0].toUpperCase()}</div>
                             <strong>@{u.username}</strong>
                         </div>
                         <FollowButton
                             userId={u.id}
                             username={u.username}
-                            siguiendoInicial={u.siguiendo}
+                            siguiendoInicial={seguidos.includes(u.id)}
                             onChange={cargar}
                         />
                     </div>

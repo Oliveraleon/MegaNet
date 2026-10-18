@@ -1,6 +1,9 @@
 const User = require("../models/Usuarios.models.js");
+const Publicaciones = require("../models/Publicaciones.models.js");
+const Seguidores = require("../models/Seguidores.models.js");
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
+
 
 const JWT_SECRET = "clave_secreta_meganet";
 
@@ -76,27 +79,146 @@ const login = async (req, res) => {
     }
 };
 
-const me = async (req, res) => {
-    try {
-        const user = await User.findByPk(req.usuario.id);
-        if (!user) {
-            return res.status(404).json({ message: "Usuario no encontrado" });
-        }
-        const profile = await Profile.findOne({ where: { userId: user.id } });
+const obtenerSeguidos = async (userId) => {
+    const relaciones = await Seguidores.findAll({ 
+        where: 
+        { 
+            followerId: userId 
+        } 
+    });
+    
+    const ids = [];
+    for (let i = 0; i < relaciones.length; i++) {
+        ids.push(relaciones[i].followedId);
+    }
+    return ids;
+};
 
-        res.status(200).json({
-            id: user.id,
-            email: user.email,
-            rol: user.rol,
-            username: profile ? profile.username : null,
+const getFeed = async (req, res) => {
+    try {
+        const incluirAutor = [{ model: User, as: "autor", attributes: ["id", "username", "profilePicture"] }];
+
+        if (!req.usuario) {
+            const posts = await Publicaciones.findAll({
+                where: { privacy: "public" },
+                include: incluirAutor,
+                order: [["creationDate", "DESC"]],
+            });
+            return res.status(200).json({ tipo: "invitado", posts });
+        }
+
+        const seguidos = await obtenerSeguidos(req.usuario.id);
+        if (seguidos.length === 0) {
+            return res.status(200).json({ tipo: "registrado", posts: [] });
+        }
+
+        const posts = await Publicaciones.findAll({
+            where: { userId: seguidos, privacy: ["public", "friends"] },
+            include: incluirAutor,
+            order: [["creationDate", "DESC"]],
         });
+        res.status(200).json({ tipo: "registrado", posts });
     } catch (error) {
-        res.status(500).json({ message: "Error del servidor" });
+        res.status(500).json({ message: "Error al obtener el feed"});
     }
 };
+
+const getUsuarios = async (req, res) => {
+    try {
+        const todos = await User.findAll({ attributes: ["id", "username", "profilePicture"] });
+        const usuarios = [];
+        
+        for (let i = 0; i < todos.length; i++) {
+            if (todos[i].id !== req.usuario.id) {
+                usuarios.push(todos[i]);
+            }
+        }
+        
+        const seguidos = await obtenerSeguidos(req.usuario.id);
+        res.status(200).json({ usuarios, seguidos });
+    } catch (error) {
+        res.status(500).json({ message: "Error al obtener usuarios"});
+    }
+};
+
+const seguir = async (req, res) => {
+    try {
+        const otroId = Number(req.params.id);
+        if (otroId === req.usuario.id) {
+            return res.status(400).json({ message: "No podes seguirte a vos mismo" });
+        }
+
+        const otroUsuario = await User.findByPk(otroId);
+        if (!otroUsuario) {
+            return res.status(404).json({ message: "El usuario no existe" });
+        }
+
+        const yaLoSigue = await Seguidores.findOne({
+            where: { followerId: req.usuario.id, followedId: otroId },
+        });
+        if (!yaLoSigue) {
+            await Seguidores.create({ followerId: req.usuario.id, followedId: otroId });
+        }
+        res.status(201).json({ message: "Ahora seguis a " + otroUsuario.username });
+    } catch (error) {
+        res.status(500).json({ message: "Error al seguir"});
+    }
+};
+
+const dejarDeSeguir = async (req, res) => {
+    try {
+        const otroId = Number(req.params.id);
+        await Seguidores.destroy({
+            where: { followerId: req.usuario.id, followedId: otroId },
+        });
+        res.status(200).json({ message: "Dejaste de seguir al usuario" });
+    } catch (error) {
+        res.status(500).json({ message: "Error al dejar de seguir"});
+    }
+};
+
+const getSeguidores = async (req, res) => {
+    try {
+        const relaciones = await Seguidores.findAll({ where: { followedId: req.usuario.id } });
+        const ids = [];
+        
+        for (let i = 0; i < relaciones.length; i++) {
+            ids.push(relaciones[i].followerId);
+        }
+        
+        const usuarios = await User.findAll({
+            where: { id: ids },
+            attributes: ["id", "username", "profilePicture"],
+        });
+        const seguidos = await obtenerSeguidos(req.usuario.id);
+        res.status(200).json({ usuarios, seguidos });
+    } catch (error) {
+        res.status(500).json({ message: "Error al obtener seguidores"});
+    }
+};
+
+const getSiguiendo = async (req, res) => {
+    try {
+        const seguidos = await obtenerSeguidos(req.usuario.id);
+        const usuarios = await User.findAll({
+            where: { id: seguidos },
+            attributes: ["id", "username", "profilePicture"],
+        });
+        res.status(200).json({ usuarios, seguidos });
+    } catch (error) {
+        res.status(500).json({ message: "Error al obtener seguidos", error: error.message });
+    }
+};
+
 
 module.exports = { 
     register,
     login,
-    me
+    getFeed,
+    getUsuarios,
+    seguir,
+    dejarDeSeguir,
+    getSeguidores,
+    getSiguiendo,
+    JWT_SECRET
 };

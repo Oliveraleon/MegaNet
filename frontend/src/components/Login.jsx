@@ -1,18 +1,14 @@
 import { useState } from "react"
-import { useNavigate, useLocation } from "react-router-dom"
-import { iniciarSesion } from "../api/auth"
+import { useNavigate, useLocation, Link } from "react-router-dom"
 import axios from "axios"
 import "./Login.css"
-import "./Register.css"
 
 function Login() {
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
     const [error, setError] = useState("")
     const navigate = useNavigate()
-
-
-    const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value })
+    const location = useLocation()
 
     const handleSubmit = async (e) => {
         e.preventDefault()
@@ -25,8 +21,8 @@ function Login() {
             localStorage.setItem("token", res.data.token)
             localStorage.setItem("user", JSON.stringify(res.data.user))
             navigate("/home")
-        } catch (err) {
-            setError(err.message)
+        } catch (error) {
+            setError(err.message || "No se pudo conectar con el servidor")
         }
     }
 
@@ -47,8 +43,8 @@ function Login() {
                             type="email"
                             name="email"
                             placeholder="Correo electrónico"
-                            value={form.email}
-                            onChange={handleChange}
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
                             required
                         />
                     </div>
@@ -59,13 +55,13 @@ function Login() {
                             type="password"
                             name="password"
                             placeholder="Tu contraseña"
-                            value={form.password}
-                            onChange={handleChange}
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
                             required
                         />
                     </div>
 
-                    {error && <p className="warning-text">{error}</p>}
+                    {error && <p style={{ color: "red" }}>{error}</p>}
 
                     <button type="submit" className="btn-submit">Iniciar sesión</button>
                 </form>
