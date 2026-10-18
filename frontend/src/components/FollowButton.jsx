@@ -56,8 +56,8 @@ function FollowButton({ userId, username, siguiendoInicial, onChange }) {
                 </button>
             )}
 
-            {paso !== "" && (
-                <div className="modal-overlay" onClick={() => setPaso(null)}>
+            {(paso === "menu" || paso === "confirmar") && (
+                <div className="modal-overlay" onClick={() => setPaso("")}>
                     <div className="modal-card" onClick={(e) => e.stopPropagation()}>
                         {paso === "menu" && (
                             <>

@@ -1,12 +1,14 @@
-import { Route, Routes, Link, Navigate, useNavigate } from "react-router-dom"
+import { Route, Routes, Link, Navigate, useNavigate, useLocation  } from "react-router-dom"
 import Login from "./components/Login"
 import Home from "./components/Home"
 import Register from "./components/Register"
+import Conexiones from "./components/Conexiones"
 import { cerrarSesion, estaLogueado } from "./api/auth"
 
 function App() {
   const navigate = useNavigate()
   const logueado = estaLogueado()
+  const location = useLocation()
 
   const salir = () => {
     cerrarSesion()
@@ -47,6 +49,7 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
         <Route path="/home" element={<Home />} />
+        <Route path="/conexiones" element={<Conexiones />} />
       </Routes>
     </>
   )
