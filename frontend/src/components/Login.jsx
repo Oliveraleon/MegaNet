@@ -1,13 +1,16 @@
 import { useState } from "react"
 import { useNavigate, useLocation } from "react-router-dom"
 import { iniciarSesion } from "../api/auth"
+import axios from "axios"
 import "./Login.css"
+import "./Register.css"
 
 function Login() {
-    const [form, setForm] = useState({ email: "", password: "" })
+    const [email, setEmail] = useState("")
+    const [password, setPassword] = useState("")
     const [error, setError] = useState("")
     const navigate = useNavigate()
-    const location = useLocation()
+
 
     const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value })
 
@@ -15,7 +18,12 @@ function Login() {
         e.preventDefault()
         setError("")
         try {
-            await iniciarSesion(form)
+            const res = await axios.post("http://localhost:3000/users/login", {
+                email,
+                password,
+            })
+            localStorage.setItem("token", res.data.token)
+            localStorage.setItem("user", JSON.stringify(res.data.user))
             navigate("/home")
         } catch (err) {
             setError(err.message)
@@ -57,13 +65,13 @@ function Login() {
                         />
                     </div>
 
-                    {error && <p style={{ color: "red" }}>{error}</p>}
+                    {error && <p className="warning-text">{error}</p>}
 
-                    <button type="submit" className="btn-submit">Entrar</button>
+                    <button type="submit" className="btn-submit">Iniciar sesión</button>
                 </form>
 
                 <div className="login-footer">
-                    <p>¿No tenés cuenta? <a href="/register">Registrate</a></p>
+                    <p>¿No tenés cuenta? <Link to="/register">Registrate</Link></p>
                 </div>
             </div>
         </div>

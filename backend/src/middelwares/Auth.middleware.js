@@ -1,0 +1,39 @@
+const jwt = require("jsonwebtoken");
+const { JWT_SECRET } = require("../controllers/Auth.controller.js");
+
+const leerToken = (req) => {
+    const header = req.headers.authorization;
+    if (!header || !header.startsWith("Bearer ")) return null;
+    return header.split(" ")[1];
+};
+
+
+const verificarToken = (req, res, next) => {
+    const token = leerToken(req);
+    if (!token) {
+        return res.status(401).json({ message: "Token no proporcionado" });
+    }
+    try {
+        req.usuario = jwt.verify(token, JWT_SECRET);
+        next();
+    } catch (error) {
+        return res.status(401).json({ message: "Token inválido o expirado" });
+    }
+};
+
+
+const tokenOpcional = (req, res, next) => {
+    const token = leerToken(req);
+    if (token) {
+        try {
+            req.usuario = jwt.verify(token, JWT_SECRET);
+        } catch (error) {
+
+        }
+    }
+    next();
+};
+
+module.exports = { 
+    verificarToken, 
+    tokenOpcional };

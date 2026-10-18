@@ -1,4 +1,4 @@
-const User = require("../models/usuarios.models.js");
+const User = require("../models/Usuarios.models.js");
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 
@@ -76,7 +76,27 @@ const login = async (req, res) => {
     }
 };
 
+const me = async (req, res) => {
+    try {
+        const user = await User.findByPk(req.usuario.id);
+        if (!user) {
+            return res.status(404).json({ message: "Usuario no encontrado" });
+        }
+        const profile = await Profile.findOne({ where: { userId: user.id } });
+
+        res.status(200).json({
+            id: user.id,
+            email: user.email,
+            rol: user.rol,
+            username: profile ? profile.username : null,
+        });
+    } catch (error) {
+        res.status(500).json({ message: "Error del servidor" });
+    }
+};
+
 module.exports = { 
     register,
-    login
+    login,
+    me
 };
