@@ -6,16 +6,14 @@ import Register from "./components/Register"
 function App() {
   return (
     <>
-      <div>
-        <Link to="/login">Login</Link>
-        <Link to="/register">Register</Link>
-        <Link to="/home">Home</Link>
-      </div>
+      <nav style={{ padding: "1rem 2rem", background: "#ffffff", borderBottom: "1px solid #eaeaea" }}>
+        <Link to="/home">
+          <img src="/MegaNet_logo.png" alt="MegaNet Logo" style={{ height: "40px" }} />
+        </Link>
+      </nav>
 
       <Routes>
-        {/* Redirige automáticamente la raíz al register */}
         <Route path="/" element={<Navigate to="/register" />} />
-        
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
         <Route path="/home" element={<Home />} />

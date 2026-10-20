@@ -1,7 +1,10 @@
+import "./Home.css"
+
 import { Navigate, useNavigate } from "react-router-dom"
 import { cerrarSesion, getUsuario, estaLogueado } from "../api/auth"
 
 function Home() {
+
     const navigate = useNavigate()
     const user = getUsuario()
     
@@ -22,7 +25,7 @@ function Home() {
                 background: "#fff",
                 boxShadow: "0 1px 4px rgba(0,0,0,.1)"
             }}>
-                <strong>🚀 MegaNet</strong>
+                <strong>MegaNet</strong>
                 <button
                     onClick={salir}
                     style={{
@@ -45,5 +48,6 @@ function Home() {
         </div>
     )
 }
+
 
 export default Home
