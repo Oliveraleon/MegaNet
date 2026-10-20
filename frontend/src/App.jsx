@@ -6,6 +6,7 @@ import Home from "./components/Home";
 import Register from "./components/Register";
 import Profile from "./components/Profile";
 import ProfileEdit from "./components/profileEdit";
+import Conexiones from "./components/Conexiones"
 import { cerrarSesion, estaLogueado, getUsuario } from "./api/auth";
 
 function App() {
@@ -105,6 +106,7 @@ function App() {
                 <Route path="/home" element={<Home />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/profileEdit" element={<ProfileEdit />} />
+                <Route path="/conexiones" element={<Conexiones />} />
             </Routes>
         </>
     );

@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react"
 import { obtenerPerfil, getUserPosts, estaLogueado } from "../api/auth"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useLocation } from "react-router-dom"
 import "./Profile.css"
 
 function Profile(){
     const [usuario, setUsuario] = useState(null)
     const [publicaciones, setPublicaciones] = useState([])
     const navigate = useNavigate()
+    const location = useLocation()
+
     useEffect(() => {
         if(!estaLogueado()){
             navigate("/login");
@@ -23,7 +25,7 @@ function Profile(){
             }
         }
         cargarDatos()
-    },  [])
+    }, [location])
 
     return(
         <div className="profile-layout"
@@ -45,21 +47,42 @@ function Profile(){
                         />
                         <div className="profile-user-details">
                             <h2>{usuario?.username}</h2>
-                            <div className="profile-stats">
-                                <span><strong>{usuario?.followers || 0}</strong>Seguidores</span>
-                                <span><strong>{usuario?.following || 0}</strong>Seguidos</span>
+                            
+                            <div style={{ display: "flex", alignItems: "center", gap: "20px", flexWrap: "wrap", marginTop: "8px" }}>
+                                <div className="profile-stats" style={{ display: "flex", gap: "15px" }}>
+                                    <span><strong>{usuario?.followers || 0}</strong> Seguidores</span>
+                                    <span><strong>{usuario?.following || 0}</strong> Seguidos</span>
+                                </div>
+                                
+                                <button
+                                    onClick={()=> navigate("/conexiones")}
+                                    style={{
+                                        background: "#f8f9fa",
+                                        border: "1px solid #ddd",
+                                        padding: "6px 14px",
+                                        borderRadius: "8px",
+                                        cursor: "pointer",
+                                        fontWeight: "500",
+                                        fontSize: "13px"
+                                    }}
+                                >
+                                    Ver seguidores y seguidos
+                                </button>
                             </div>
                         </div>
                     </div>
+
                     {usuario?.description && (
                     <p className="profile-description">
                         {usuario?.description}
                     </p>
                     )}
+
                     <button className="edit-profile-btn" onClick={() => navigate("/profileEdit")}>
                         Editar perfil
                     </button>
                 </div>
+
                 <div className="profile-bottom">
                     {publicaciones.length > 0 ? (
                         publicaciones.map((post) => (

@@ -101,7 +101,7 @@ function EditProfile() {
                         value={formData.description}
                         maxLength={250} 
                         onChange={handleChange} 
-                        style={{ width: "100%", padding: "8px", marginTop: "5px", resize: "vertical" }}
+                        style={{ width: "100%", padding: "8px", marginTop: "5px" }}
                     />
                     <span style={{fontSize: "12px", color: "#666", display: "block", textAlign: "right"}}>
                         {formData.description.length} / 250

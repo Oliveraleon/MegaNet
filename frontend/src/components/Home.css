@@ -1,6 +1,318 @@
+/* El html/body de Login.css y Register.css tienen overflow:hidden,
+   por eso el scroll lo maneja este contenedor (73px = alto de la barra) */
 .home-container {
-     display: flex;
-     flex-direction: column;
-     align-items: center;
-     justify-content: center;
+    height: calc(100vh - 73px);
+    overflow-y: auto;
+    background-color: #f4f6f9;
+    padding: 1.5rem 1rem;
+    box-sizing: border-box;
+}
+
+.home-content {
+    display: flex;
+    gap: 1.5rem;
+    max-width: 960px;
+    margin: 0 auto;
+    align-items: flex-start;
+}
+
+.home-feed {
+    flex: 1;
+    min-width: 0;
+}
+
+.home-side {
+    width: 300px;
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 1rem 1.2rem;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+    position: sticky;
+    top: 0;
+}
+
+.home-side h3 {
+    margin: 0 0 0.8rem 0;
+}
+
+.side-link {
+    display: block;
+    margin-top: 1rem;
+    color: #eb3b6f;
+    font-weight: 600;
+    text-decoration: none;
+    font-size: 0.9rem;
+}
+
+.home-title {
+    margin: 0 0 1rem 0;
+}
+
+.home-banner {
+    background: #000000;
+    color: #ffffff;
+    padding: 0.9rem 1.2rem;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+    line-height: 1.5;
+}
+
+.home-banner a {
+    color: #00e5ff;
+    font-weight: 600;
+}
+
+.home-empty {
+    color: #666666;
+    text-align: center;
+    padding: 1.5rem 0;
+}
+
+.home-error {
+    color: #cc0000;
+    background: #ffe6e6;
+    padding: 0.7rem;
+    border-radius: 8px;
+    text-align: center;
+}
+
+/* ---------- Publicaciones ---------- */
+.post-card {
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 1rem 1.2rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
+
+.post-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.post-author {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+}
+
+.post-date {
+    display: block;
+    font-size: 0.75rem;
+    color: #888888;
+}
+
+.post-content {
+    margin: 0.9rem 0 0 0;
+    line-height: 1.5;
+    word-break: break-word;
+}
+
+.post-image {
+    width: 100%;
+    max-height: 420px;
+    object-fit: cover;
+    border-radius: 10px;
+    margin-top: 0.8rem;
+}
+
+.avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #eb3b6f, #00d827);
+    color: #ffffff;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.user-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.55rem 0;
+    gap: 0.6rem;
+}
+
+/* ---------- Boton Seguir / Siguiendo ---------- */
+.follow-btn {
+    padding: 0.45rem 1rem;
+    border: none;
+    border-radius: 8px;
+    background-color: #eb3b6f;
+    color: #ffffff;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 0.2s;
+}
+
+.follow-btn:hover {
+    background-color: #c9265a;
+}
+
+.follow-btn.following {
+    background-color: #efefef;
+    color: #222222;
+}
+
+.follow-btn.following:hover {
+    background-color: #dcdcdc;
+}
+
+/* ---------- Menu / modal (estilo Instagram) ---------- */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-card {
+    background: #ffffff;
+    width: 100%;
+    max-width: 400px;
+    margin: 1rem;
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.2rem;
+    border-bottom: 1px solid #eeeeee;
+}
+
+.modal-close {
+    background: transparent;
+    border: none;
+    font-size: 1.1rem;
+    cursor: pointer;
+}
+
+.modal-option {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 0.95rem 1.2rem;
+    background: #ffffff;
+    border: none;
+    border-bottom: 1px solid #f1f1f1;
+    font-size: 0.95rem;
+    cursor: pointer;
+}
+
+.modal-option:disabled {
+    color: #999999;
+    cursor: not-allowed;
+}
+
+.modal-option.danger {
+    color: #d9174a;
+    font-weight: 600;
+    border-bottom: none;
+}
+
+.modal-option.danger:hover {
+    background: #fff1f4;
+}
+
+.modal-confirm {
+    padding: 1.5rem 1.4rem;
+    text-align: center;
+}
+
+.modal-confirm h3 {
+    margin: 0 0 0.6rem 0;
+}
+
+.modal-confirm p {
+    color: #666666;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 0.8rem;
+    margin-top: 1.2rem;
+}
+
+.modal-actions button {
+    flex: 1;
+    padding: 0.7rem;
+    border-radius: 8px;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn-cancel {
+    background: #efefef;
+    color: #222222;
+}
+
+.btn-danger {
+    background: #d9174a;
+    color: #ffffff;
+}
+
+/* ---------- Seguidores / Seguidos ---------- */
+.conexiones-box {
+    max-width: 520px;
+    margin: 0 auto;
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 1rem 1.2rem;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
+
+.tabs {
+    display: flex;
+    border-bottom: 1px solid #eeeeee;
+    margin-bottom: 0.8rem;
+}
+
+.tab {
+    flex: 1;
+    padding: 0.8rem;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    font-weight: 600;
+    color: #777777;
+    cursor: pointer;
+}
+
+.tab.active {
+    color: #111111;
+    border-bottom-color: #eb3b6f;
+}
+
+@media (max-width: 800px) {
+    .home-content {
+        flex-direction: column;
+    }
+    .home-side {
+        width: 100%;
+        position: static;
+        box-sizing: border-box;
+    }
 }

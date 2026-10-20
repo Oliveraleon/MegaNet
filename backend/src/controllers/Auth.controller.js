@@ -2,6 +2,7 @@ const User = require("../models/usuarios.models.js");
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 
+
 const JWT_SECRET = "clave_secreta_meganet";
 
 const register = async (req, res) => {
@@ -76,7 +77,9 @@ const login = async (req, res) => {
     }
 };
 
+
 module.exports = { 
     register,
-    login
+    login,
+    JWT_SECRET
 };
