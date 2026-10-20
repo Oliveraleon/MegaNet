@@ -1,55 +1,113 @@
-import { Route, Routes, Link, Navigate, useNavigate } from "react-router-dom"
-import Login from "./components/Login"
-import Home from "./components/Home"
-import Register from "./components/Register"
-import { cerrarSesion, estaLogueado } from "./api/auth"
+
+import { useState, useEffect } from "react";
+import { Route, Routes, Link, Navigate, useNavigate, useLocation } from "react-router-dom";
+import Login from "./components/Login";
+import Home from "./components/Home";
+import Register from "./components/Register";
+import Profile from "./components/Profile";
+import ProfileEdit from "./components/profileEdit";
+import { cerrarSesion, estaLogueado, getUsuario } from "./api/auth";
 
 function App() {
-  const navigate = useNavigate()
-  const logueado = estaLogueado()
+    const navigate = useNavigate();
+    const logueado = estaLogueado();
+    const location = useLocation();
+    const [user, setUser] = useState(getUsuario());
 
-  const salir = () => {
-    cerrarSesion()
-    navigate("/login")
-  }
-  const esPaginaAuth = location.pathname === "/login" || location.pathname === "/register"
-  return (
-    <>
-      <nav style={{ 
-        display: "flex", 
-        justifyContent: "space-between", 
-        alignItems: "center", 
-        padding: "1rem 2rem", 
-        background: "#ffffff", 
-        borderBottom: "1px solid #eaeaea" 
-        }}>
-        <Link to="/home">
-          <img src="/MegaNet_logo.png" alt="MegaNet Logo" style={{ height: "40px" }} />
-        </Link>
-        {logueado && !esPaginaAuth && (
-          <button
-            onClick={salir}
-            style={{
-                    padding: "8px 14px",
-                    border: 0,
-                    borderRadius: 8,
-                    background: "#007bff",
-                    color: "#fff",
-                    cursor: "pointer"
-                    }}
-        >
-          Cerrar sesión
-        </button>
-        )}
-      </nav>
-      <Routes>
-        <Route path="/" element={<Navigate to="/register" />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/home" element={<Home />} />
-      </Routes>
-    </>
-  )
+    useEffect(() => {
+        setUser(getUsuario());
+    }, [location.pathname]);
+
+    const salir = () => {
+        cerrarSesion();
+        setUser(null);
+        navigate("/login");
+    };
+
+    const esPaginaAuth =
+        location.pathname === "/login" ||
+        location.pathname === "/register";
+
+    return (
+        <>
+            <nav style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                padding: "1rem 2rem",
+                background: "#ffffff",
+                borderBottom: "1px solid #eaeaea"
+            }}>
+                <Link to="/home">
+                    <img
+                        src="/MegaNet_logo.png"
+                        alt="MegaNet Logo"
+                        style={{ height: "40px" }}
+                    />
+                </Link>
+
+                {logueado && !esPaginaAuth && (
+                    <div style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "15px"
+                    }}>
+                        <Link
+                            to="/profile"
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "10px",
+                                textDecoration: "none",
+                                color: "#222",
+                                padding: "6px 12px",
+                                borderRadius: "10px",
+                                border: "1px solid #eaeaea"
+                            }}
+                        >
+                            <img
+                                src={user?.profilePicture || "/defaultProfile.png"}
+                                alt="Foto de perfil"
+                                style={{
+                                    width: "40px",
+                                    height: "40px",
+                                    borderRadius: "50%",
+                                    objectFit: "cover"
+                                }}
+                            />
+
+                            <span style={{ fontWeight: "600" }}>
+                                {user?.username || user?.email || "Mi perfil"}
+                            </span>
+                        </Link>
+
+                        <button
+                            onClick={salir}
+                            style={{
+                                padding: "8px 14px",
+                                border: 0,
+                                borderRadius: 8,
+                                background: "#007bff",
+                                color: "#fff",
+                                cursor: "pointer"
+                            }}
+                        >
+                            Cerrar sesión
+                        </button>
+                    </div>
+                )}
+            </nav>
+
+            <Routes>
+                <Route path="/" element={<Navigate to="/register" />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/home" element={<Home />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/profileEdit" element={<ProfileEdit />} />
+            </Routes>
+        </>
+    );
 }
 
-export default App
+export default App;

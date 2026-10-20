@@ -27,11 +27,17 @@ const Usuarios = sequelize.define(
             type: DataTypes.STRING,
         },
         profilePicture:{
-            type: DataTypes.STRING,
+            type: DataTypes.TEXT,
         },
         profileBanner:{
-            type: DataTypes.STRING,
+            type: DataTypes.TEXT,
         },
+        followers:{
+            type: DataTypes.INTEGER
+        },
+        following:{
+            type: DataTypes.INTEGER
+        }
     },
     {
         tableName: "Usuarios",
