@@ -1,11 +1,6 @@
 const jwt = require("jsonwebtoken");
 const { JWT_SECRET } = require("../controllers/Auth.controller.js");
 
-const leerToken = (req) => {
-    const header = req.headers.authorization;
-    if (!header || !header.startsWith("Bearer ")) return null;
-    return header.split(" ")[1];
-};
 
 const verificarToken = (req, res, next) => {
     const header = req.headers.authorization;
