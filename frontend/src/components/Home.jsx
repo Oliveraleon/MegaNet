@@ -4,6 +4,10 @@ import { Link, useNavigate } from "react-router-dom"
 import { cerrarSesion, getUsuario, estaLogueado } from "../api/auth"
 import FollowButton from "./FollowButton"
 import "./Home.css"
+import { Navigate, useNavigate } from "react-router-dom"
+import { cerrarSesion, getUsuario, estaLogueado } from "../api/auth"
+import Post from "./Post"
+
 
 function Home() {
     const navigate = useNavigate()

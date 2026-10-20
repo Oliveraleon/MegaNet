@@ -5,6 +5,13 @@ const route = Router()
 
 route.post('/register', register)
 route.post('/login', login)
+route.post('/publicaciones', verificarToken, crearPublicacion)
+route.put('/publicaciones/:id', verificarToken, editarPublicacion)
+route.delete('/publicaciones/:id', verificarToken, eliminarPublicacion)
+route.post('/publicaciones/:id/like', verificarToken, darLike)
+route.delete('/publicaciones/:id/like', verificarToken, quitarLike)
+route.get('/publicaciones/:id/comentarios', verificarToken, getComentarios)
+route.post('/publicaciones/:id/comentarios', verificarToken, crearComentario)
 
 
 module.exports = route;

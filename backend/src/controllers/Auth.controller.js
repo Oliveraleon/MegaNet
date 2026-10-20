@@ -1,6 +1,8 @@
 const User = require("../models/usuarios.models.js");
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
+const Reacciones = require("../models/Reacciones.models.js");
+const Comentarios = require("../models/Comentarios.models.js");
 
 
 const JWT_SECRET = "clave_secreta_meganet";
@@ -76,10 +78,207 @@ const login = async (req, res) => {
         res.status(500).json({ message: "Error logging in", error: error.message });
     }
 };
+// ---------- Publicaciones, likes y comentarios ----------
+
+const crearPublicacion = async (req, res) => {
+    try {
+        const { content, multimedia } = req.body;
+
+        if (!content || content.trim() === "") {
+            return res.status(400).json({ message: "Escribi un texto para la publicacion" });
+        }
+        if (content.length > 255) {
+            return res.status(400).json({ message: "El texto es muy largo (maximo 255 caracteres)" });
+        }
+
+        // El autor sale del token, nunca del body
+        await Publicaciones.create({
+            content: content.trim(),
+            multimedia: multimedia || null,
+            privacy: "public",
+            userId: req.usuario.id,
+        });
+        res.status(201).json({ message: "Publicacion creada" });
+    } catch (error) {
+        res.status(500).json({ message: "Error al crear la publicacion", error: error.message });
+    }
+};
+
+const editarPublicacion = async (req, res) => {
+    try {
+        const post = await Publicaciones.findByPk(req.params.id);
+        if (!post) {
+            return res.status(404).json({ message: "La publicacion no existe" });
+        }
+        // Solo el dueño puede editar
+        if (post.userId !== req.usuario.id) {
+            return res.status(403).json({ message: "Solo podes editar tus propias publicaciones" });
+        }
+
+        const { content } = req.body;
+        if (!content || content.trim() === "") {
+            return res.status(400).json({ message: "El texto no puede quedar vacio" });
+        }
+        if (content.length > 255) {
+            return res.status(400).json({ message: "El texto es muy largo (maximo 255 caracteres)" });
+        }
+
+        post.content = content.trim();
+        await post.save();
+        res.status(200).json({ message: "Publicacion editada" });
+    } catch (error) {
+        res.status(500).json({ message: "Error al editar la publicacion", error: error.message });
+    }
+};
+
+const eliminarPublicacion = async (req, res) => {
+    try {
+        const post = await Publicaciones.findByPk(req.params.id);
+        if (!post) {
+            return res.status(404).json({ message: "La publicacion no existe" });
+        }
+        // Solo el dueño puede eliminar
+        if (post.userId !== req.usuario.id) {
+            return res.status(403).json({ message: "Solo podes eliminar tus propias publicaciones" });
+        }
+
+        await Reacciones.destroy({ where: { postId: post.id } });
+        await Comentarios.destroy({ where: { postId: post.id } });
+        await post.destroy();
+        res.status(200).json({ message: "Publicacion eliminada" });
+    } catch (error) {
+        res.status(500).json({ message: "Error al eliminar la publicacion", error: error.message });
+    }
+};
+
+const darLike = async (req, res) => {
+    try {
+        const post = await Publicaciones.findByPk(req.params.id);
+        if (!post) {
+            return res.status(404).json({ message: "La publicacion no existe" });
+        }
+
+        const yaLeDioLike = await Reacciones.findOne({
+            where: { postId: post.id, userId: req.usuario.id },
+        });
+        if (!yaLeDioLike) {
+            await Reacciones.create({ type: "like", postId: post.id, userId: req.usuario.id });
+        }
+
+        const likes = await Reacciones.count({ where: { postId: post.id, type: "like" } });
+        res.status(200).json({ liked: true, likes });
+    } catch (error) {
+        res.status(500).json({ message: "Error al dar like", error: error.message });
+    }
+};
+
+const quitarLike = async (req, res) => {
+    try {
+        const post = await Publicaciones.findByPk(req.params.id);
+        if (!post) {
+            return res.status(404).json({ message: "La publicacion no existe" });
+        }
+
+        await Reacciones.destroy({ where: { postId: post.id, userId: req.usuario.id } });
+
+        const likes = await Reacciones.count({ where: { postId: post.id, type: "like" } });
+        res.status(200).json({ liked: false, likes });
+    } catch (error) {
+        res.status(500).json({ message: "Error al sacar el like", error: error.message });
+    }
+};
+
+const getComentarios = async (req, res) => {
+    try {
+        const comentarios = await Comentarios.findAll({
+            where: { postId: req.params.id },
+            include: [{ model: User, as: "autor", attributes: ["id", "username"] }],
+            order: [["creationDate", "ASC"]],
+        });
+        res.status(200).json(comentarios);
+    } catch (error) {
+        res.status(500).json({ message: "Error al obtener los comentarios", error: error.message });
+    }
+};
+
+const crearComentario = async (req, res) => {
+    try {
+        const post = await Publicaciones.findByPk(req.params.id);
+        if (!post) {
+            return res.status(404).json({ message: "La publicacion no existe" });
+        }
+
+        const { text } = req.body;
+        if (!text || text.trim() === "") {
+            return res.status(400).json({ message: "El comentario no puede estar vacio" });
+        }
+        if (text.length > 255) {
+            return res.status(400).json({ message: "El comentario es muy largo (maximo 255 caracteres)" });
+        }
+
+        await Comentarios.create({ text: text.trim(), postId: post.id, userId: req.usuario.id });
+        res.status(201).json({ message: "Comentario creado" });
+    } catch (error) {
+        res.status(500).json({ message: "Error al comentar", error: error.message });
+    }
+};
 
 
 module.exports = { 
     register,
     login,
+    crearPublicacion,
+    editarPublicacion,
+    eliminarPublicacion,
+    darLike,
+    quitarLike,
+    getComentarios,
+    crearComentario,
+    login,
     JWT_SECRET
+};
+// A cada publicacion le agrega: cantidad de likes, si yo di like y cantidad de comentarios
+const agregarDatos = async (posts, userId) => {
+    const lista = [];
+    for (const p of posts) {
+        const post = p.toJSON();
+        post.likes = await Reacciones.count({ where: { postId: p.id, type: "like" } });
+        post.cantidadComentarios = await Comentarios.count({ where: { postId: p.id } });
+        post.liked = false;
+        if (userId) {
+            const miLike = await Reacciones.findOne({ where: { postId: p.id, userId: userId } });
+            post.liked = miLike !== null;
+        }
+        lista.push(post);
+    }
+    return lista;
+};
+
+const getFeed = async (req, res) => {
+    try {
+        const incluirAutor = [{ model: User, as: "autor", attributes: ["id", "username", "profilePicture"] }];
+
+        // Invitado: ve las publicaciones publicas de todos
+        if (!req.usuario) {
+            const posts = await Publicaciones.findAll({
+                where: { privacy: "public" },
+                include: incluirAutor,
+                order: [["creationDate", "DESC"]],
+            });
+            return res.status(200).json({ tipo: "invitado", posts: await agregarDatos(posts, null) });
+        }
+
+        // Registrado: ve las publicaciones de las personas que sigue y las suyas
+        const ids = await obtenerSeguidos(req.usuario.id);
+        ids.push(req.usuario.id);
+
+        const posts = await Publicaciones.findAll({
+            where: { userId: ids, privacy: ["public", "friends"] },
+            include: incluirAutor,
+            order: [["creationDate", "DESC"]],
+        });
+        res.status(200).json({ tipo: "registrado", posts: await agregarDatos(posts, req.usuario.id) });
+    } catch (error) {
+        res.status(500).json({ message: "Error al obtener el feed", error: error.message });
+    }
 };

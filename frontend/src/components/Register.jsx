@@ -6,6 +6,8 @@ import "./Register.css"
 function Register() {
     const [form, setForm] = useState({ username: "", email: "", password: "" })
     const [error, setError] = useState("")
+    const [contenido, setContenido] = useState("")
+    const [imagen, setImagen] = useState("")
     const navigate = useNavigate()
     const [mostrarPassword, setMostrarPassword] = useState(false)
 
@@ -40,6 +42,24 @@ function Register() {
                 <div className="register-card">
                     <h2 className="register-title">Crear cuenta</h2>
                     <p className="register-subtitle">Ingresá tus datos para empezar</p>
+                    
+                    {tipo === "registrado" && (
+    <form className="post-form" onSubmit={publicar}>
+        <textarea
+            placeholder="¿Qué estás pensando?"
+            value={contenido}
+            maxLength={255}
+            onChange={(e) => setContenido(e.target.value)}
+        />
+        <input
+            type="text"
+            placeholder="Link de una imagen (opcional)"
+            value={imagen}
+            onChange={(e) => setImagen(e.target.value)}
+        />
+        <button type="submit">Publicar</button>
+    </form>
+)}
                 {error && (
                     <div style={{
                         backgroundColor: "#ffe6e6",
@@ -120,3 +140,18 @@ function Register() {
 }
 
 export default Register
+
+const publicar = async (e) => {
+    e.preventDefault()
+    try {
+        setError("")
+        const token = localStorage.getItem("token")
+        const config = { headers: { Authorization: "Bearer " + token } }
+        await axios.post("http://localhost:3000/users/publicaciones", { content: contenido, multimedia: imagen }, config)
+        setContenido("")
+        setImagen("")
+        cargar()
+    } catch (err) {
+        setError(err.response?.data?.message || "No se pudo publicar")
+    }
+}
