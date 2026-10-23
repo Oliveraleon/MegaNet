@@ -1,5 +1,6 @@
 const { Router } = require("express");
-const { register, login} = require("../controllers/Auth.controller.js");
+const { register, login, crearPublicacion, editarPublicacion, eliminarPublicacion, darLike, quitarLike, getComentarios, crearComentario} = require("../controllers/Auth.controller.js");
+const { verificarToken } = require("../middelwares/Auth.middleware.js");
 
 const route = Router()
 

@@ -1,9 +1,9 @@
-const User = require("../models/usuarios.models.js");
-const bcrypt = require('bcrypt')
-const jwt = require('jsonwebtoken')
+const User = require("../models/Usuarios.models.js");
 const Reacciones = require("../models/Reacciones.models.js");
 const Comentarios = require("../models/Comentarios.models.js");
-
+const Publicaciones = require("../models/Publicaciones.models.js");
+const bcrypt = require('bcrypt')
+const jwt = require('jsonwebtoken')
 
 const JWT_SECRET = "clave_secreta_meganet";
 
@@ -224,19 +224,6 @@ const crearComentario = async (req, res) => {
 };
 
 
-module.exports = { 
-    register,
-    login,
-    crearPublicacion,
-    editarPublicacion,
-    eliminarPublicacion,
-    darLike,
-    quitarLike,
-    getComentarios,
-    crearComentario,
-    login,
-    JWT_SECRET
-};
 // A cada publicacion le agrega: cantidad de likes, si yo di like y cantidad de comentarios
 const agregarDatos = async (posts, userId) => {
     const lista = [];
@@ -281,4 +268,18 @@ const getFeed = async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: "Error al obtener el feed", error: error.message });
     }
+};
+
+module.exports = { 
+    register,
+    login,
+    crearPublicacion,
+    editarPublicacion,
+    eliminarPublicacion,
+    darLike,
+    quitarLike,
+    getComentarios,
+    crearComentario,
+    getFeed,
+    JWT_SECRET
 };

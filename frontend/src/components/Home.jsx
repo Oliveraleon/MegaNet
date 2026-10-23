@@ -1,13 +1,10 @@
 import { useEffect, useState } from "react"
 import axios from "axios"
-import { Link, useNavigate } from "react-router-dom"
+import { Link, useNavigate, Navigate } from "react-router-dom"
 import { cerrarSesion, getUsuario, estaLogueado } from "../api/auth"
 import FollowButton from "./FollowButton"
-import "./Home.css"
-import { Navigate, useNavigate } from "react-router-dom"
-import { cerrarSesion, getUsuario, estaLogueado } from "../api/auth"
 import Post from "./Post"
-
+import "./Home.css"
 
 function Home() {
     const navigate = useNavigate()
