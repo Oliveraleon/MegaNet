@@ -7,6 +7,8 @@ import Register from "./components/Register";
 import Profile from "./components/Profile";
 import ProfileEdit from "./components/profileEdit";
 import Conexiones from "./components/Conexiones"
+import PerfilUsuario from "./components/PerfilUsuario"
+import Amigos from "./components/Amigos"
 import { cerrarSesion, estaLogueado, getUsuario } from "./api/auth";
 
 function App() {
@@ -53,6 +55,9 @@ function App() {
                         alignItems: "center",
                         gap: "15px"
                     }}>
+                        <Link to="/amigos" style={{ textDecoration: "none", color: "#222", fontWeight: "600" }}>
+                            Amigos
+                        </Link>
                         <Link
                             to="/profile"
                             style={{
@@ -107,6 +112,8 @@ function App() {
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/profileEdit" element={<ProfileEdit />} />
                 <Route path="/conexiones" element={<Conexiones />} />
+                <Route path="/usuario/:id" element={<PerfilUsuario />} />
+                <Route path="/amigos" element={<Amigos />} />
             </Routes>
         </>
     );

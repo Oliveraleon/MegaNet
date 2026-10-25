@@ -1,7 +1,7 @@
 import "./Home.css"
 
 import {useEffect, useState } from "react"
-import { Navigate } from "react-router-dom"
+import { Navigate, Link } from "react-router-dom"
 import { estaLogueado } from "../api/auth"
 import axios from "axios"
 import FollowButton from "./FollowButton"
@@ -64,7 +64,9 @@ function Conexiones() {
                         <div className="post-author">
                             <div className="avatar">
                                 {u.username[0].toUpperCase()}</div>
-                            <strong>@{u.username}</strong>
+                                    <Link to={"/usuario/" + u.id} className="autor-link">
+                                <strong>@{u.username}</strong>
+                            </Link>
                         </div>
                         <FollowButton
                             userId={u.id}

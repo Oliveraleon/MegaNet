@@ -1,6 +1,8 @@
-const User = require("../models/usuarios.models.js");
+const User = require("../models/Usuarios.models.js");
 const Publicaciones = require("../models/Publicaciones.models.js");
 const Seguidores = require("../models/Seguidores.models.js");
+const Amistades = require("../models/Amistades.models.js");
+const { agregarDatos } = require("./Auth.controller.js");
 
 const obtenerPerfil = async (req, res)=> {
     try{
@@ -84,6 +86,49 @@ const obtenerSeguidos = async (userId) => {
     return ids;
 };
 
+// Ids de las personas que me siguen
+const obtenerSeguidoresIds = async (userId) => {
+    const relaciones = await Seguidores.findAll({ where: { followedId: userId } });
+    const ids = [];
+    for (let i = 0; i < relaciones.length; i++) {
+        ids.push(relaciones[i].followerId);
+    }
+    return ids;
+};
+
+// Ids de mis amigos: solicitudes aceptadas, sin importar quien la envio
+const obtenerAmigos = async (userId) => {
+    const enviadas = await Amistades.findAll({ where: { senderId: userId, status: "aceptada" } });
+    const recibidas = await Amistades.findAll({ where: { receiverId: userId, status: "aceptada" } });
+    const ids = [];
+    for (let i = 0; i < enviadas.length; i++) {
+        ids.push(enviadas[i].receiverId);
+    }
+    for (let i = 0; i < recibidas.length; i++) {
+        ids.push(recibidas[i].senderId);
+    }
+    return ids;
+};
+
+// Busca la amistad entre dos usuarios, sin importar quien envio la solicitud
+const buscarAmistad = async (idA, idB) => {
+    const directa = await Amistades.findOne({ where: { senderId: idA, receiverId: idB } });
+    if (directa) {
+        return directa;
+    }
+    return await Amistades.findOne({ where: { senderId: idB, receiverId: idA } });
+};
+
+// A cada publicacion le agrega si el autor es amigo, si lo sigo y si me sigue
+const agregarRelacion = (posts, seguidos, seguidores, amigos) => {
+    for (let i = 0; i < posts.length; i++) {
+        posts[i].loSigo = seguidos.includes(posts[i].userId);
+        posts[i].meSigue = seguidores.includes(posts[i].userId);
+        posts[i].esAmigo = amigos.includes(posts[i].userId);
+    }
+    return posts;
+};
+
 const getFeed = async (req, res) => {
     try {
         const incluirAutor = [{ model: User, as: "autor", attributes: ["id", "username", "profilePicture"] }];
@@ -94,20 +139,32 @@ const getFeed = async (req, res) => {
                 include: incluirAutor,
                 order: [["creationDate", "DESC"]],
             });
-            return res.status(200).json({ tipo: "invitado", posts });
+                        return res.status(200).json({ tipo: "invitado", posts: await agregarDatos(posts, null) });
         }
 
+               
         const seguidos = await obtenerSeguidos(req.usuario.id);
-        if (seguidos.length === 0) {
-            return res.status(200).json({ tipo: "registrado", posts: [] });
+        const seguidores = await obtenerSeguidoresIds(req.usuario.id);
+        const amigos = await obtenerAmigos(req.usuario.id);
+
+        const ids = [req.usuario.id];
+        for (let i = 0; i < seguidos.length; i++) {
+            ids.push(seguidos[i]);
+        }
+        for (let i = 0; i < seguidores.length; i++) {
+            ids.push(seguidores[i]);
+        }
+        for (let i = 0; i < amigos.length; i++) {
+            ids.push(amigos[i]);
         }
 
         const posts = await Publicaciones.findAll({
-            where: { userId: seguidos, privacy: ["public", "friends"] },
+            where: { userId: ids, privacy: ["public", "friends"] },
             include: incluirAutor,
             order: [["creationDate", "DESC"]],
         });
-        res.status(200).json({ tipo: "registrado", posts });
+        const lista = await agregarDatos(posts, req.usuario.id);
+        res.status(200).json({ tipo: "registrado", posts: agregarRelacion(lista, seguidos, seguidores, amigos) });
     } catch (error) {
         res.status(500).json({ message: "Error al obtener el feed"});
     }
@@ -200,6 +257,160 @@ const getSiguiendo = async (req, res) => {
     }
 };
 
+// ---------- Ver a otro usuario, amigos y solicitudes de amistad ----------
+
+const verPerfil = async (req, res) => {
+    try {
+        const otroId = Number(req.params.id);
+        const usuario = await User.findByPk(otroId, {
+            attributes: ["id", "username", "description", "profilePicture", "profileBanner"],
+        });
+        if (!usuario) {
+            return res.status(404).json({ message: "El usuario no existe" });
+        }
+
+        // Relacion de seguimiento
+        const misSeguidos = await obtenerSeguidos(req.usuario.id);
+        const misSeguidores = await obtenerSeguidoresIds(req.usuario.id);
+        const susSeguidos = await obtenerSeguidos(otroId);
+        const susSeguidores = await obtenerSeguidoresIds(otroId);
+
+        // Relacion de amistad: ninguna, enviada, recibida o amigos
+        let amistad = "ninguna";
+        const relacion = await buscarAmistad(req.usuario.id, otroId);
+        if (relacion) {
+            if (relacion.status === "aceptada") {
+                amistad = "amigos";
+            } else if (relacion.senderId === req.usuario.id) {
+                amistad = "enviada";
+            } else {
+                amistad = "recibida";
+            }
+        }
+
+        // Los amigos tambien ven las publicaciones con privacidad "friends"
+        const privacidad = ["public"];
+        if (amistad === "amigos") {
+            privacidad.push("friends");
+        }
+        const publicaciones = await Publicaciones.findAll({
+            where: { userId: otroId, privacy: privacidad },
+            order: [["creationDate", "DESC"]],
+        });
+
+        res.status(200).json({
+            usuario,
+            loSigo: misSeguidos.includes(otroId),
+            meSigue: misSeguidores.includes(otroId),
+            seguidores: susSeguidores.length,
+            seguidos: susSeguidos.length,
+            amistad,
+            publicaciones,
+        });
+    } catch (error) {
+        res.status(500).json({ message: "Error al obtener el perfil", error: error.message });
+    }
+};
+
+const enviarSolicitud = async (req, res) => {
+    try {
+        const otroId = Number(req.params.id);
+        if (otroId === req.usuario.id) {
+            return res.status(400).json({ message: "No podes enviarte una solicitud a vos mismo" });
+        }
+
+        const otroUsuario = await User.findByPk(otroId);
+        if (!otroUsuario) {
+            return res.status(404).json({ message: "El usuario no existe" });
+        }
+
+        const existente = await buscarAmistad(req.usuario.id, otroId);
+        if (existente) {
+            if (existente.status === "aceptada") {
+                return res.status(400).json({ message: "Ya son amigos" });
+            }
+            if (existente.senderId === req.usuario.id) {
+                return res.status(400).json({ message: "Ya le enviaste una solicitud" });
+            }
+            return res.status(400).json({ message: "Esa persona ya te envio una solicitud, aceptala" });
+        }
+
+        await Amistades.create({ senderId: req.usuario.id, receiverId: otroId });
+        res.status(201).json({ message: "Solicitud enviada a " + otroUsuario.username });
+    } catch (error) {
+        res.status(500).json({ message: "Error al enviar la solicitud", error: error.message });
+    }
+};
+
+const aceptarSolicitud = async (req, res) => {
+    try {
+        const otroId = Number(req.params.id);
+
+        // Solo puede aceptar quien la recibio
+        const solicitud = await Amistades.findOne({
+            where: { senderId: otroId, receiverId: req.usuario.id, status: "pendiente" },
+        });
+        if (!solicitud) {
+            return res.status(404).json({ message: "No hay una solicitud pendiente de esa persona" });
+        }
+
+        solicitud.status = "aceptada";
+        await solicitud.save();
+        res.status(200).json({ message: "Ahora son amigos" });
+    } catch (error) {
+        res.status(500).json({ message: "Error al aceptar la solicitud", error: error.message });
+    }
+};
+
+// Sirve para rechazar una solicitud, cancelar la que envie o eliminar a un amigo
+const eliminarAmistad = async (req, res) => {
+    try {
+        const otroId = Number(req.params.id);
+        const relacion = await buscarAmistad(req.usuario.id, otroId);
+        if (!relacion) {
+            return res.status(404).json({ message: "No existe amistad ni solicitud con esa persona" });
+        }
+
+        await relacion.destroy();
+        res.status(200).json({ message: "Listo" });
+    } catch (error) {
+        res.status(500).json({ message: "Error al eliminar la amistad", error: error.message });
+    }
+};
+
+const getAmigos = async (req, res) => {
+    try {
+        const ids = await obtenerAmigos(req.usuario.id);
+        const usuarios = await User.findAll({
+            where: { id: ids },
+            attributes: ["id", "username", "profilePicture"],
+        });
+        res.status(200).json({ usuarios });
+    } catch (error) {
+        res.status(500).json({ message: "Error al obtener los amigos", error: error.message });
+    }
+};
+
+// Solicitudes que me enviaron y todavia no acepte
+const getSolicitudes = async (req, res) => {
+    try {
+        const solicitudes = await Amistades.findAll({
+            where: { receiverId: req.usuario.id, status: "pendiente" },
+        });
+        const ids = [];
+        for (let i = 0; i < solicitudes.length; i++) {
+            ids.push(solicitudes[i].senderId);
+        }
+        const usuarios = await User.findAll({
+            where: { id: ids },
+            attributes: ["id", "username", "profilePicture"],
+        });
+        res.status(200).json({ usuarios });
+    } catch (error) {
+        res.status(500).json({ message: "Error al obtener las solicitudes", error: error.message });
+    }
+};
+
 module.exports = {
     obtenerPerfil,
     actualizarPerfil,
@@ -209,5 +420,11 @@ module.exports = {
     seguir,
     dejarDeSeguir,
     getSeguidores,
-    getSiguiendo
+    getSiguiendo,
+    verPerfil,
+    enviarSolicitud,
+    aceptarSolicitud,
+    eliminarAmistad,
+    getAmigos,
+    getSolicitudes
 };

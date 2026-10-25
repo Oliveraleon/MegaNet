@@ -3,6 +3,7 @@ const Publicaciones = require("./Publicaciones.models.js");
 const Seguidores = require("./Seguidores.models.js");
 const Reacciones = require("./Reacciones.models.js");
 const Comentarios = require("./Comentarios.models.js");
+const Amistades = require("./Amistades.models.js");
 
 Usuarios.hasMany(Publicaciones, { foreignKey: "userId", as: "publicaciones" });
 Publicaciones.belongsTo(Usuarios, { foreignKey: "userId", as: "autor" });
@@ -19,5 +20,6 @@ module.exports = {
     Publicaciones, 
     Seguidores, 
     Reacciones, 
-    Comentarios 
+    Comentarios,
+    Amistades
 };
