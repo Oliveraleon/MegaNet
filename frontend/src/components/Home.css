@@ -434,3 +434,225 @@
         box-sizing: border-box;
     }
 }
+
+/* ---------- Amigos, etiquetas y perfil de otro usuario ---------- */
+
+.autor-link {
+    color: inherit;
+    text-decoration: none;
+}
+
+.autor-link:hover {
+    text-decoration: underline;
+}
+
+.etiqueta {
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    background: #eeeeee;
+    color: #555555;
+    margin-left: 0.4rem;
+}
+
+.etiqueta.amigos {
+    background: #e5f4e4;
+    color: #1e7a1e;
+}
+
+.perfil-top {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.8rem;
+}
+
+.perfil-top h2 {
+    margin: 0 0 0.3rem 0;
+    display: inline;
+}
+
+.perfil-top p {
+    margin: 0.4rem 0;
+    color: #555555;
+}
+
+.avatar-grande {
+    width: 80px;
+    height: 80px;
+    font-size: 2rem;
+}
+
+.perfil-stats {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.9rem;
+}
+
+.perfil-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #eeeeee;
+}
+
+/* ---------- Chat, grupos y servidores ---------- */
+
+a.small-btn {
+    text-decoration: none;
+    color: #222222;
+}
+
+.chat-layout {
+    display: flex;
+    gap: 1rem;
+    max-width: 1100px;
+    height: 100%;
+    margin: 0 auto;
+}
+
+.chat-lista {
+    width: 240px;
+    flex-shrink: 0;
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 1rem;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.chat-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
+    padding: 0.5rem;
+    border: none;
+    border-radius: 10px;
+    background: transparent;
+    text-align: left;
+    font-size: 0.95rem;
+    cursor: pointer;
+}
+
+.chat-item:hover {
+    background: #f4f6f9;
+}
+
+.chat-item.activo {
+    background: #fde7ee;
+    font-weight: 600;
+}
+
+.chat-crear {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin-top: 0.8rem;
+    padding-top: 0.8rem;
+    border-top: 1px solid #eeeeee;
+}
+
+.chat-crear input[type="text"],
+.chat-crear select,
+.chat-info select {
+    padding: 0.5rem;
+    border: 1px solid #dddddd;
+    border-radius: 8px;
+}
+
+.chat-derecha {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.chat-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 0.7rem 1rem;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
+
+.chat-ventana {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 1rem;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
+
+.chat-titulo {
+    margin: 0;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid #eeeeee;
+}
+
+/* column-reverse hace que la lista arranque abajo, mostrando siempre el ultimo mensaje */
+.chat-mensajes {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column-reverse;
+}
+
+.mensaje {
+    max-width: 70%;
+    margin: 0.3rem 0;
+    padding: 0.5rem 0.8rem;
+    border-radius: 12px;
+    background: #f1f1f1;
+}
+
+.mensaje p {
+    margin: 0.2rem 0;
+    word-break: break-word;
+}
+
+.mensaje.mio {
+    margin-left: auto;
+    background: #fde7ee;
+}
+
+.chat-form {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.chat-form input {
+    flex: 1;
+    padding: 0.6rem;
+    border: 1px solid #dddddd;
+    border-radius: 999px;
+}
+
+.chat-form button {
+    padding: 0.5rem 1.2rem;
+    border: none;
+    border-radius: 999px;
+    background: #eb3b6f;
+    color: #ffffff;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.voz-usuario {
+    padding: 0.4rem 0;
+}

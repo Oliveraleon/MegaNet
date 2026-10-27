@@ -1,7 +1,8 @@
 import { useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, Link } from "react-router-dom"
 import axios from "axios"
 import FollowButton from "./FollowButton"
+
 
 function Post({ post, user, tipo, onChange }) {
     const navigate = useNavigate()
@@ -24,6 +25,16 @@ function Post({ post, user, tipo, onChange }) {
 
     // Solo el dueño de la publicacion ve los botones de editar y eliminar
     const esMio = post.autor.id === user?.id
+
+        // Relacion con el autor: amigo, luego lo sigo y por ultimo me sigue
+    let etiqueta = ""
+    if (post.esAmigo) {
+        etiqueta = "Amigos"
+    } else if (post.loSigo) {
+        etiqueta = "Siguiendo"
+    } else if (post.meSigue) {
+        etiqueta = "Te sigue"
+    }
 
     const necesitaLogin = () => {
         if (!token) {
@@ -100,7 +111,10 @@ function Post({ post, user, tipo, onChange }) {
             <header className="post-header">
                 <div className="post-author">
                     <div className="avatar">{post.autor.username[0].toUpperCase()}</div>
-                    <strong>@{post.autor.username}</strong>
+                                        <Link to={"/usuario/" + post.autor.id} className="autor-link">
+                        <strong>@{post.autor.username}</strong>
+                    </Link>
+                    {etiqueta && <span className={post.esAmigo ? "etiqueta amigos" : "etiqueta"}>{etiqueta}</span>}
                 </div>
 
                 {esMio ? (
@@ -112,7 +126,7 @@ function Post({ post, user, tipo, onChange }) {
                     <FollowButton
                         userId={post.autor.id}
                         username={post.autor.username}
-                        siguiendoInicial={tipo === "registrado"}
+                                                siguiendoInicial={post.loSigo}
                         onChange={onChange}
                     />
                 )}

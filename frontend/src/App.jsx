@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Route, Routes, Link, Navigate, useNavigate, useLocation, useParams} from "react-router-dom";
+import { Route, Routes, Link, Navigate, useNavigate, useLocation } from "react-router-dom";
 import Login from "./components/Login";
 import Home from "./components/Home";
 import Register from "./components/Register";
@@ -13,6 +13,10 @@ import Buscador from "./components/Buscador";
 import PasswordChange from "./components/PasswordChange"
 import RecuperarCuenta from "./components/RecuperarCuenta"
 import ReiniciarContraseña from "./components/ReiniciarContraseña"
+import PerfilUsuario from "./components/PerfilUsuario"
+import Amigos from "./components/Amigos"
+import Chat from "./components/Chat"
+import Servidores from "./components/Servidores"
 import { cerrarSesion, estaLogueado, getUsuario } from "./api/auth";
 
 function App() {
@@ -63,6 +67,9 @@ function App() {
                         alignItems: "center",
                         gap: "15px"
                     }}>
+                        <Link to="/amigos" style={{ textDecoration: "none", color: "#222", fontWeight: "600" }}>
+                            Amigos
+                        </Link>
                         <Link
                             to="/profile"
                             style={{
@@ -90,6 +97,13 @@ function App() {
                             <span style={{ fontWeight: "600" }}>
                                 {user?.username || user?.email || "Mi perfil"}
                             </span>
+                        </Link>
+
+                                                <Link to="/chat" style={{ textDecoration: "none", color: "#222", fontWeight: "600" }}>
+                            Chat
+                        </Link>
+                        <Link to="/servidores" style={{ textDecoration: "none", color: "#222", fontWeight: "600" }}>
+                            Servidores
                         </Link>
 
                         <button
@@ -124,6 +138,11 @@ function App() {
                 <Route path="/passwordChange" element={<PasswordChange />}/>
                 <Route path="/recuperarCuenta" element={<RecuperarCuenta />}/>
                 <Route path="/reiniciarContrasena" element={<ReiniciarContraseña />}/>
+                <Route path="/usuario/:id" element={<PerfilUsuario />} />
+                <Route path="/amigos" element={<Amigos />} />
+                <Route path="/chat" element={<Chat />} />
+                <Route path="/chat/:id" element={<Chat />} />
+                <Route path="/servidores" element={<Servidores />} />
             </Routes>
             </div>
         </>
