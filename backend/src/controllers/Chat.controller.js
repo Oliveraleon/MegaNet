@@ -5,48 +5,10 @@ const MiembrosGrupo = require("../models/MiembrosGrupo.models.js");
 const Servidores = require("../models/Servidores.models.js");
 const MiembrosServidor = require("../models/MiembrosServidor.models.js");
 const Canales = require("../models/Canales.models.js");
-const { obtenerSeguidos, obtenerSeguidoresIds, obtenerAmigos } = require("./User.controller.js");
+const { obtenerContactos, esMiembroGrupo, buscarMiembroServidor, textoValido } = require("../utilities/utilidades.js");
 
 const incluirAutor = [{ model: User, as: "autor", attributes: ["id", "username", "profilePicture"] }];
 const incluirUsuario = [{ model: User, as: "usuario", attributes: ["id", "username", "profilePicture"] }];
-
-// ---------- Funciones de ayuda ----------
-
-// Ids de las personas con las que puedo chatear:
-// mis amigos y las personas que nos seguimos mutuamente
-const obtenerContactos = async (userId) => {
-    const amigos = await obtenerAmigos(userId);
-    const seguidos = await obtenerSeguidos(userId);
-    const seguidores = await obtenerSeguidoresIds(userId);
-
-    const ids = [];
-    for (let i = 0; i < amigos.length; i++) {
-        ids.push(amigos[i]);
-    }
-    for (let i = 0; i < seguidos.length; i++) {
-        // Lo sigo, me sigue y todavia no esta en la lista
-        if (seguidores.includes(seguidos[i]) && !ids.includes(seguidos[i])) {
-            ids.push(seguidos[i]);
-        }
-    }
-    return ids;
-};
-
-const esMiembroGrupo = async (grupoId, userId) => {
-    const miembro = await MiembrosGrupo.findOne({ where: { grupoId: grupoId, userId: userId } });
-    return miembro !== null;
-};
-
-const buscarMiembroServidor = async (servidorId, userId) => {
-    return await MiembrosServidor.findOne({ where: { servidorId: servidorId, userId: userId } });
-};
-
-// Revisa que el texto del mensaje no este vacio
-const textoValido = (content) => {
-    return content && content.trim() !== "";
-};
-
-// ---------- Chat privado ----------
 
 const getContactos = async (req, res) => {
     try {

@@ -3,6 +3,7 @@ const Publicaciones = require("../models/Publicaciones.models.js");
 const Seguidores = require("../models/Seguidores.models.js");
 const Amistades = require("../models/Amistades.models.js");
 const { agregarDatos } = require("./Auth.controller.js");
+const { obtenerSeguidos, obtenerSeguidoresIds, obtenerAmigos, buscarAmistad, agregarRelacion } = require("../utilities/utilidades.js");
 
 const obtenerPerfil = async (req, res)=> {
     try{
@@ -71,63 +72,6 @@ const actualizarPerfil = async (req, res) => {
     }
 };
 
-const obtenerSeguidos = async (userId) => {
-    const relaciones = await Seguidores.findAll({ 
-        where: 
-        { 
-            followerId: userId 
-        } 
-    });
-    
-    const ids = [];
-    for (let i = 0; i < relaciones.length; i++) {
-        ids.push(relaciones[i].followedId);
-    }
-    return ids;
-};
-
-// Ids de las personas que me siguen
-const obtenerSeguidoresIds = async (userId) => {
-    const relaciones = await Seguidores.findAll({ where: { followedId: userId } });
-    const ids = [];
-    for (let i = 0; i < relaciones.length; i++) {
-        ids.push(relaciones[i].followerId);
-    }
-    return ids;
-};
-
-// Ids de mis amigos: solicitudes aceptadas, sin importar quien la envio
-const obtenerAmigos = async (userId) => {
-    const enviadas = await Amistades.findAll({ where: { senderId: userId, status: "aceptada" } });
-    const recibidas = await Amistades.findAll({ where: { receiverId: userId, status: "aceptada" } });
-    const ids = [];
-    for (let i = 0; i < enviadas.length; i++) {
-        ids.push(enviadas[i].receiverId);
-    }
-    for (let i = 0; i < recibidas.length; i++) {
-        ids.push(recibidas[i].senderId);
-    }
-    return ids;
-};
-
-// Busca la amistad entre dos usuarios, sin importar quien envio la solicitud
-const buscarAmistad = async (idA, idB) => {
-    const directa = await Amistades.findOne({ where: { senderId: idA, receiverId: idB } });
-    if (directa) {
-        return directa;
-    }
-    return await Amistades.findOne({ where: { senderId: idB, receiverId: idA } });
-};
-
-// A cada publicacion le agrega si el autor es amigo, si lo sigo y si me sigue
-const agregarRelacion = (posts, seguidos, seguidores, amigos) => {
-    for (let i = 0; i < posts.length; i++) {
-        posts[i].loSigo = seguidos.includes(posts[i].userId);
-        posts[i].meSigue = seguidores.includes(posts[i].userId);
-        posts[i].esAmigo = amigos.includes(posts[i].userId);
-    }
-    return posts;
-};
 
 const getFeed = async (req, res) => {
     try {
@@ -414,9 +358,6 @@ const getSolicitudes = async (req, res) => {
 module.exports = {
     obtenerPerfil,
     actualizarPerfil,
-    obtenerSeguidos,
-    obtenerSeguidoresIds,
-    obtenerAmigos,
     getFeed,
     getUsuarios,
     seguir,

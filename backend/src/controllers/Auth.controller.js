@@ -241,35 +241,6 @@ const agregarDatos = async (posts, userId) => {
     return lista;
 };
 
-const getFeed = async (req, res) => {
-    try {
-        const incluirAutor = [{ model: User, as: "autor", attributes: ["id", "username", "profilePicture"] }];
-
-        // Invitado: ve las publicaciones publicas de todos
-        if (!req.usuario) {
-            const posts = await Publicaciones.findAll({
-                where: { privacy: "public" },
-                include: incluirAutor,
-                order: [["creationDate", "DESC"]],
-            });
-            return res.status(200).json({ tipo: "invitado", posts: await agregarDatos(posts, null) });
-        }
-
-        // Registrado: ve las publicaciones de las personas que sigue y las suyas
-        const ids = await obtenerSeguidos(req.usuario.id);
-        ids.push(req.usuario.id);
-
-        const posts = await Publicaciones.findAll({
-            where: { userId: ids, privacy: ["public", "friends"] },
-            include: incluirAutor,
-            order: [["creationDate", "DESC"]],
-        });
-        res.status(200).json({ tipo: "registrado", posts: await agregarDatos(posts, req.usuario.id) });
-    } catch (error) {
-        res.status(500).json({ message: "Error al obtener el feed", error: error.message });
-    }
-};
-
 module.exports = { 
     register,
     login,
@@ -280,6 +251,6 @@ module.exports = {
     quitarLike,
     getComentarios,
     crearComentario,
-    getFeed,
+    agregarDatos,
     JWT_SECRET
 };
