@@ -24,7 +24,7 @@ Publicaciones.hasMany(Reacciones, { foreignKey: "postId", as: "reacciones" });
 Reacciones.belongsTo(Publicaciones, { foreignKey: "postId", as: "publicacion" });
 
 Usuarios.hasMany(Comentarios, { foreignKey: "userId", as: "comentarios" });
-Comentarios.belongsTo(Usuarios, { foreignKey: "userId", as: "autor" });
+Comentarios.belongsTo(Usuarios, { foreignKey: "userId", as: "autorComentario" });
 
 Publicaciones.hasMany(Comentarios, { foreignKey: "postId", as: "comentarios" });
 Comentarios.belongsTo(Publicaciones, { foreignKey: "postId", as: "publicacion" });
