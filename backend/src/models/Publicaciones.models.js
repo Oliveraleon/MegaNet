@@ -22,7 +22,19 @@ const Publicaciones = sequelize.define(
         },
         privacy:{
             type: DataTypes.ENUM("public", "private", "friends"),
-        }
+
+
+        },
+
+        userId: {
+              type: DataTypes.INTEGER,
+              allowNull: true,
+            },
+            activo: {
+                type: DataTypes.BOOLEAN,
+                allowNull: false,
+                defaultValue: true,
+            },
     },
     {
         tableName: "Publicaciones",
