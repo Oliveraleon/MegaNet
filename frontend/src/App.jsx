@@ -1,12 +1,18 @@
 
 import { useState, useEffect } from "react";
-import { Route, Routes, Link, Navigate, useNavigate, useLocation } from "react-router-dom";
+import { Route, Routes, Link, Navigate, useNavigate, useLocation, useParams} from "react-router-dom";
 import Login from "./components/Login";
 import Home from "./components/Home";
 import Register from "./components/Register";
 import Profile from "./components/Profile";
 import ProfileEdit from "./components/profileEdit";
 import Conexiones from "./components/Conexiones"
+import SubirPosts from "./components/SubirPost"
+import SideBar from "./components/SideBar";
+import Buscador from "./components/Buscador";
+import PasswordChange from "./components/PasswordChange"
+import RecuperarCuenta from "./components/RecuperarCuenta"
+import ReiniciarContraseña from "./components/ReiniciarContraseña"
 import { cerrarSesion, estaLogueado, getUsuario } from "./api/auth";
 
 function App() {
@@ -23,21 +29,25 @@ function App() {
         cerrarSesion();
         setUser(null);
         navigate("/login");
-    };
+    }; 
 
     const esPaginaAuth =
         location.pathname === "/login" ||
-        location.pathname === "/register";
+        location.pathname === "/register" ||
+        location.pathname === "/recuperarCuenta" ||
+        location.pathname === "/reiniciarContraseña";
 
     return (
         <>
+            {logueado && !esPaginaAuth && <SideBar />}
             <nav style={{
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
                 padding: "1rem 2rem",
                 background: "#ffffff",
-                borderBottom: "1px solid #eaeaea"
+                borderBottom: "1px solid #eaeaea",
+                marginLeft: logueado && !esPaginaAuth ? "75px" : "0"
             }}>
                 <Link to="/home">
                     <img
@@ -98,16 +108,24 @@ function App() {
                     </div>
                 )}
             </nav>
-
+            <div style={{marginLeft: logueado && !esPaginaAuth ? "75px" : "0"}}>
             <Routes>
                 <Route path="/" element={<Navigate to="/register" />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/home" element={<Home />} />
                 <Route path="/profile" element={<Profile />} />
+                <Route path="/profile/:id" element={<Profile />} />
                 <Route path="/profileEdit" element={<ProfileEdit />} />
                 <Route path="/conexiones" element={<Conexiones />} />
+                <Route path="/conexiones/:id" element={<Conexiones />} />
+                <Route path="/subirposts" element={<SubirPosts />}/>
+                <Route path="/buscador" element={<Buscador />}/>
+                <Route path="/passwordChange" element={<PasswordChange />}/>
+                <Route path="/recuperarCuenta" element={<RecuperarCuenta />}/>
+                <Route path="/reiniciarContrasena" element={<ReiniciarContraseña />}/>
             </Routes>
+            </div>
         </>
     );
 }

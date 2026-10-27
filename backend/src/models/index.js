@@ -7,12 +7,18 @@ const Comentarios = require("./Comentarios.models.js");
 Usuarios.hasMany(Publicaciones, { foreignKey: "userId", as: "publicaciones" });
 Publicaciones.belongsTo(Usuarios, { foreignKey: "userId", as: "autor" });
 
-Usuarios.hasMany(Reacciones, { foreignKey: "userId" });
-Publicaciones.hasMany(Reacciones, { foreignKey: "postId" });
+Usuarios.hasMany(Reacciones, { foreignKey: "userId", as: "reacciones" });
+Reacciones.belongsTo(Usuarios, { foreignKey: "userId", as: "usuario" });
 
-Usuarios.hasMany(Comentarios, { foreignKey: "userId" });
-Publicaciones.hasMany(Comentarios, { foreignKey: "postId" });
+Publicaciones.hasMany(Reacciones, { foreignKey: "postId", as: "reacciones" });
+Reacciones.belongsTo(Publicaciones, { foreignKey: "postId", as: "publicacion" });
+
+
+Usuarios.hasMany(Comentarios, { foreignKey: "userId", as: "comentarios" });
 Comentarios.belongsTo(Usuarios, { foreignKey: "userId", as: "autor" });
+
+Publicaciones.hasMany(Comentarios, { foreignKey: "postId", as: "comentarios" });
+Comentarios.belongsTo(Publicaciones, { foreignKey: "postId", as: "publicacion" });
 
 module.exports = { 
     Usuarios, 

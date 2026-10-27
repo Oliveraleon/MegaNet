@@ -1,12 +1,13 @@
-import "./Home.css"
-
 import {useEffect, useState } from "react"
-import { Navigate } from "react-router-dom"
+import { Navigate, useParams, useNavigate } from "react-router-dom"
 import { estaLogueado } from "../api/auth"
 import axios from "axios"
 import FollowButton from "./FollowButton"
+import "./Home.css"
 
 function Conexiones() {
+    const { id } = useParams();
+    const navigate = useNavigate();
     const [tab, setTab] = useState("seguidores")
     const [seguidores, setSeguidores] = useState([])
     const [siguiendo, setSiguiendo] = useState([])
@@ -16,8 +17,10 @@ function Conexiones() {
         const token = localStorage.getItem("token")
         const config = { headers: { Authorization: "Bearer " + token } }
 
-        const res1 = await axios.get("http://localhost:3000/user/seguidores", config)
-        const res2 = await axios.get("http://localhost:3000/user/siguiendo", config)
+        const urlSeguidores = id ? `http://localhost:3000/user/seguidores/${id}` : "http://localhost:3000/user/seguidores";
+        const urlSiguiendo = id ? `http://localhost:3000/user/siguiendo/${id}` : "http://localhost:3000/user/siguiendo";
+        const res1 = await axios.get(urlSeguidores, config)
+        const res2 = await axios.get(urlSiguiendo, config)
 
         setSeguidores(res1.data.usuarios)
         setSiguiendo(res2.data.usuarios)
@@ -28,7 +31,7 @@ function Conexiones() {
         if (estaLogueado()) {
         cargar()
         }
-    }, [])
+    }, [id])
 
     if (!estaLogueado()) return <Navigate to="/login" replace />
 
@@ -61,9 +64,18 @@ function Conexiones() {
 
                 {lista.map((u) => (
                     <div className="user-row" key={u.id}>
-                        <div className="post-author">
+                        <div className="post-author" onClick={() => navigate(`/profile/${u.id}`)} style={{ cursor: "pointer" }}>
                             <div className="avatar">
-                                {u.username[0].toUpperCase()}</div>
+                                <img 
+                                    src={u.profilePicture || "/defaultProfile.png"}
+                                    alt={u.username}
+                                    style={{ width: "40px", height: "40px", borderRadius: "50%", objectFit: "cover" }}
+                                    onError={(e)=>{
+                                        e.currentTarget.onerror = null;
+                                        e.currentTarget.src = "/defaultProfile.png";
+                                    }}
+                                />
+                                </div>
                             <strong>@{u.username}</strong>
                         </div>
                         <FollowButton

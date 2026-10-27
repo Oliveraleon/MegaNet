@@ -1,61 +1,117 @@
 import { useState, useEffect } from "react"
-import { obtenerPerfil, getUserPosts, estaLogueado } from "../api/auth"
-import { useNavigate, useLocation } from "react-router-dom"
+import { getUserPosts, estaLogueado, dejarDeSeguir, seguirUsuario } from "../api/auth"
+import { useNavigate, useParams } from "react-router-dom"
 import "./Profile.css"
+import FollowButton from "./FollowButton";
 
 function Profile(){
-    const [usuario, setUsuario] = useState(null)
-    const [publicaciones, setPublicaciones] = useState([])
-    const navigate = useNavigate()
-    const location = useLocation()
+    const { id } = useParams();
+    const [perfil, setPerfil] = useState(null);
+    const [publicaciones, setPublicaciones] = useState([]);
+    const [loSigue, setLoSigue] = useState(false);
+    const navigate = useNavigate();
+    const usuarioLogueado = JSON.parse(localStorage.getItem("user"));
+    const miPerfil = !id || (usuarioLogueado && Number(id) === Number(usuarioLogueado.id));
 
     useEffect(() => {
         if(!estaLogueado()){
             navigate("/login");
-            return
+            return;
         }
-        async function cargarDatos(){
-            try{
-                const data = await obtenerPerfil()
-                setUsuario(data.user);
-                const postsData = await getUserPosts()
-                setPublicaciones(postsData)
-            }catch(error){
-                console.error("No se pudo cargar el perfil",error)
+
+        const cargarDatosPerfil = async () => {
+            try {
+                const token = localStorage.getItem("token");
+                const url = miPerfil
+                    ? "http://localhost:3000/user/profile" 
+                    : `http://localhost:3000/user/${id}`;
+
+                const resUser = await fetch(url, {
+                    headers: { "Authorization": `Bearer ${token}` }
+                });
+                const datos = await resUser.json();
+                const usuarioData = datos.user || datos;
+                setPerfil(usuarioData);
+
+                if(!id){
+                    const postData = await getUserPosts();
+                    setPublicaciones(postData);
+                }else{
+                    const resPosts = await fetch(`http://localhost:3000/posts/user/${id}`,{
+                        headers: {"Authorization": `Bearer ${token}`}
+                    });
+                    const postData = await resPosts.json();
+                    setPublicaciones(postData);
+
+                    const resSiguiendo = await fetch("http://localhost:3000/user/siguiendo",{
+                        headers: {"Authorization": `Bearer ${token}`}
+                    });
+                    const datosSiguiendo = await resSiguiendo.json();
+                    let estaSiguiendo = false;
+                    for(let i = 0; i < datosSiguiendo.usuarios.length; i++){
+                        if(Number(datosSiguiendo.usuarios[i].id)===Number(id)){
+                            estaSiguiendo = true;
+                            break;
+                        }
+                    }
+                    setLoSigue(estaSiguiendo);
+                }
+            } catch (error) {
+                console.log("Error al cargar el perfil:", error);
             }
+        };
+        cargarDatosPerfil();
+    }, [id,navigate]);
+
+    const botonSeguir = async ()=>{
+        try{
+            if(loSigue){
+                await dejarDeSeguir(id);
+                setLoSigue(false);
+            }else{
+                await seguirUsuario(id);
+                setLoSigue(true);
+            }
+        }catch(error){
+            console.error("Error al actualizar los seguidos", error);
         }
-        cargarDatos()
-    }, [location])
+    };
 
     return(
         <div className="profile-layout"
         style={{
-            backgroundImage: usuario?.profileBanner ? `url(${usuario.profileBanner})`:"none",
-            backgroundColor: usuario?.profileBanner ? "transparent": "#f0f2f5"
+            backgroundImage: perfil?.profileBanner ? `url(${perfil.profileBanner})` : "none",
+            backgroundColor: perfil?.profileBanner ? "transparent" : "#f0f2f5"
         }}>
             <div className="main-container">
                 <div className="profile-top">
                     <div className="profile-header-info">
                         <img
-                            src={usuario?.profilePicture || "/defaultProfile.png"}
+                            src={perfil?.profilePicture || "/defaultProfile.png"}
                             alt="Foto de perfil"
                             className="profile-avatar-container"
                             onError={(e)=>{
-                                e.currentTarget.onError = null;
-                                e.currentTarget.src = "/defaulProfile.png";
+                                e.currentTarget.onerror = null;
+                                e.currentTarget.src = "/defaultProfile.png";
                             }}
                         />
                         <div className="profile-user-details">
-                            <h2>{usuario?.username}</h2>
+                            <h2>{perfil?.username}</h2>
                             
                             <div style={{ display: "flex", alignItems: "center", gap: "20px", flexWrap: "wrap", marginTop: "8px" }}>
                                 <div className="profile-stats" style={{ display: "flex", gap: "15px" }}>
-                                    <span><strong>{usuario?.followers || 0}</strong> Seguidores</span>
-                                    <span><strong>{usuario?.following || 0}</strong> Seguidos</span>
+                                    <span><strong>{perfil?.followers || 0}</strong> Seguidores</span>
+                                    <span><strong>{perfil?.following || 0}</strong> Seguidos</span>
                                 </div>
                                 
                                 <button
-                                    onClick={()=> navigate("/conexiones")}
+                                    onClick={() => {
+                                        if(id){
+                                            navigate(`/conexiones/${id}`);
+                                        }else{
+                                            navigate("/conexiones");
+                                        }
+                                    }}
                                     style={{
                                         background: "#f8f9fa",
                                         border: "1px solid #ddd",
@@ -72,15 +128,23 @@ function Profile(){
                         </div>
                     </div>
 
-                    {usuario?.description && (
+                    {perfil?.description && (
                     <p className="profile-description">
-                        {usuario?.description}
+                        {perfil?.description}
                     </p>
                     )}
 
+                {miPerfil ? (
                     <button className="edit-profile-btn" onClick={() => navigate("/profileEdit")}>
                         Editar perfil
                     </button>
+                ) : (
+                    <FollowButton
+                        userId={id}
+                        username={perfil?.username}
+                        siguiendoInicial={loSigue}
+                />
+                )}
                 </div>
 
                 <div className="profile-bottom">
@@ -92,13 +156,13 @@ function Profile(){
                                     <img src={post.multimedia} alt="Multimedia" className="post-media" />
                                 )}
                                 <span className="post-date">
-                                    {post.creationDate ? new Date(post.creationDate).toLocaleDateString():""}
+                                    {post.creationDate ? new Date(post.creationDate).toLocaleDateString() : ""}
                                 </span>
                             </div>
                         ))
                     ) : (
                         <p style={{textAlign: "center", color: "#666", padding: "20px"}}>
-                            Aun no hay publicaciones
+                            Aún no hay publicaciones
                         </p>
                     )}
                 </div>
@@ -107,4 +171,4 @@ function Profile(){
     )
 }
 
-export default Profile
+export default Profile;

@@ -14,7 +14,7 @@ function Login() {
         e.preventDefault()
         setError("")
         try {
-            const res = await axios.post("http://localhost:3000/users/login", {
+            const res = await axios.post("http://localhost:3000/auth/login", {
                 email,
                 password,
             })
@@ -22,7 +22,7 @@ function Login() {
             localStorage.setItem("user", JSON.stringify(res.data.user))
             navigate("/home")
         } catch (error) {
-            setError(err.message || "No se pudo conectar con el servidor")
+            setError(error.response?.data?.message || error.message || "No se pudo conectar con el servidor")
         }
     }
 
@@ -65,9 +65,13 @@ function Login() {
 
                     <button type="submit" className="btn-submit">Iniciar sesión</button>
                 </form>
-
                 <div className="login-footer">
                     <p>¿No tenés cuenta? <Link to="/register">Registrate</Link></p>
+                </div>
+                <div style={{ marginTop: "15px", textAlign: "center" }}>
+                    <Link to="/RecuperarCuenta" style={{ fontSize: "14px", color: "#007bff", textDecoration: "none" }}>
+                    ¿Olvidaste tu contraseña?
+                    </Link>
                 </div>
             </div>
         </div>

@@ -10,7 +10,6 @@ function Home() {
     const navigate = useNavigate()
     const user = getUsuario()
     const logueado = estaLogueado()
-
     const [tipo, setTipo] = useState("invitado")
     const [posts, setPosts] = useState([])
     const [error, setError] = useState("")
@@ -63,7 +62,6 @@ function Home() {
                                 : "Todavía no hay publicaciones."}
                         </p>
                     )}
-
                     {posts.map((post) => (
                         <article className="post-card" key={post.id}>
                             <header className="post-header">
@@ -81,7 +79,6 @@ function Home() {
                                     />
                                 )}
                             </header>
-
                             <p className="post-content">{post.content}</p>
                         </article>
                     ))}

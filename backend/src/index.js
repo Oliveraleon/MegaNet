@@ -1,5 +1,6 @@
 const express = require("express")
 const cors = require("cors")
+require('dotenv').config();
 const { sequelize } = require("./config/db")
 const authRoute = require("./routes/Auth.routes.js");
 const profileRoute = require("./routes/user.routes.js");
@@ -19,6 +20,6 @@ server.use("/posts", postRoutes);
 
 server.listen(3000, async()=>{
     await sequelize.authenticate()
-    await sequelize.sync({alter:true})
+    await sequelize.sync()
     console.log("El server esta ON");
 })

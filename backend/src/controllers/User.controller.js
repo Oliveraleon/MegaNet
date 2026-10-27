@@ -1,6 +1,12 @@
-const User = require("../models/usuarios.models.js");
+const { Op } = require("sequelize");
+const User = require("../models/Usuarios.models.js");
 const Publicaciones = require("../models/Publicaciones.models.js");
 const Seguidores = require("../models/Seguidores.models.js");
+const bcrypt = require('bcrypt')
+const jwt = require('jsonwebtoken')
+const nodemailer = require('nodemailer')
+
+const JWT_SECRET = "clave_secreta_meganet";
 
 const obtenerPerfil = async (req, res)=> {
     try{
@@ -169,7 +175,8 @@ const dejarDeSeguir = async (req, res) => {
 
 const getSeguidores = async (req, res) => {
     try {
-        const relaciones = await Seguidores.findAll({ where: { followedId: req.usuario.id } });
+        const targetUserId = req.params.id || req.usuario.id;
+        const relaciones = await Seguidores.findAll({ where: { followedId: targetUserId } });
         const ids = [];
         
         for (let i = 0; i < relaciones.length; i++) {
@@ -189,7 +196,8 @@ const getSeguidores = async (req, res) => {
 
 const getSiguiendo = async (req, res) => {
     try {
-        const seguidos = await obtenerSeguidos(req.usuario.id);
+        const targetUserId = req.params.id || req.usuario.id;
+        const seguidos = await obtenerSeguidos(targetUserId);
         const usuarios = await User.findAll({
             where: { id: seguidos },
             attributes: ["id", "username", "profilePicture"],
@@ -200,6 +208,153 @@ const getSiguiendo = async (req, res) => {
     }
 };
 
+const buscarUser = async (req,res)=>{
+    try{
+        const termino = req.query.q;
+        if(!termino){
+            return res.status(200).json([])
+        }
+        const usuariosEncontrados = await User.findAll({
+            where:{
+                username:{
+                    [Op.like]: `%${termino}%`
+                },
+                id:{
+                    [Op.ne]: req.user.id
+                }
+            },
+            attributes: ["id","username","profilePicture"]
+        });
+        res.status(200).json(usuariosEncontrados)
+    }catch(error){
+        res.status(500).json({message:"Error al buscar usuarios", error:error.message});
+    }
+}
+
+const obtenerUserPorId = async (req,res) =>{
+    try{
+        const { id } = req.params;
+        const user = await User.findByPk(id,{
+            attributes: {exclude: ["password"]}
+        });
+        if(!user){
+            return res.status(404).json({message:"Usuario no encontrado"})
+        }
+        res.status(200).json({user});
+    }catch(error){
+        res.status(500).json({message:"Error al obtener al usuario", error:error.message})
+    }
+};
+
+
+const actualizarContraseña = async (req,res)=>{
+    try{
+        const userId = req.user.id;
+        const {passwordActual, nuevaPassword} = req.body;
+        const user = await User.findByPk(userId);
+        if(!user){
+            return res.status(404).json({message:"Usuario no encontrado"});
+        }
+        const validPassword = await bcrypt.compare(passwordActual, user.password);
+            if (!validPassword) {
+                return res.status(400).json({ message: "La contraseña actual es incorrecta" });
+            }
+        const hashedPassword = await bcrypt.hash(nuevaPassword, 10);
+        user.password = hashedPassword
+        await user.save();
+        res.json({message: "Contraseña actualizada"})
+    }catch(error){
+        console.error("Error al cambiar contraseña:", error);
+        res.status(500).json({ message: "Error al cambiar la contraseña" });
+    }
+}
+
+const eliminarCuenta = async (req,res)=>{
+    try{
+        const userId = req.user.id;
+        const user = await User.findByPk(userId);
+        if(!user){
+            return res.status(404).json({message:"Usuario no encontrado"})
+        }
+        await Publicaciones.destroy({ where: { userId: userId } });
+        await Seguidores.destroy({
+            where:{
+                [Op.or]:[
+                    {followerId: userId},
+                    {followedId: userId}
+                ]
+            }
+        });
+        await user.destroy()
+        res.status(200).json({ message: "Cuenta eliminada correctamente" });
+    }catch(error){
+        console.error("Error al eliminar la cuenta:", error);
+        res.status(500).json({ message: "Error al eliminar la cuenta" });
+    }
+}
+
+const recuperarCuenta = async (req,res)=>{
+    try{
+        const {email} = req.body;
+        const user = await User.findOne({where:{email}})
+        if(!user){
+            return res.status(404).json({message:"Usuario no encontrado"})
+        }
+        const token = jwt.sign(
+             { id: user.id, email: user.email },
+             JWT_SECRET,
+             { expiresIn: "2h" }
+        )
+        const transporter = nodemailer.createTransport({
+            service:'gmail',
+            auth:{
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS
+            }
+        });
+        const linkRecuperacion = `http://localhost:5173/reiniciarContrasena?token=${token}`;
+        await transporter.sendMail({
+            from: process.env.EMAIL_USER,
+            to: user.email,
+            subject: "Recuperación de contraseña - MegaNet",
+            html: `
+                <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+                <h2>¿Olvidaste tu contraseña?</h2>
+                <p>Has solicitado restablecer tu contraseña para tu cuenta.</p>
+                <p>Haz clic en el siguiente botón para crear una nueva (este enlace expira en 2 horas):</p>
+                <a href="${linkRecuperacion}" style="background: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">Restablecer contraseña</a>
+                <p style="margin-top: 20px; font-size: 12px; color: #666;">Si tú no solicitaste esto, puedes ignorar este mensaje.</p>
+                </div>
+            `
+        });
+        return res.status(200).json({ message: "Correo de recuperación enviado con éxito" });
+    }catch(error){
+        console.error("Error al recuperar cuenta:", error);
+        res.status(500).json({ message: "Error al procesar la recuperación" });
+    }
+}
+
+const reiniciarContraseña = async (req,res)=>{
+    try{
+        const { token, nuevaPassword } = req.body;
+        if(!token || !nuevaPassword){
+            return res.status(400).json({ message: "Faltan datos obligatorios" });
+        }
+        const decoded = jwt.verify(token, JWT_SECRET);
+        const user = await User.findByPk(decoded.id);
+        if(!user){
+            return res.status(404).json({message:"Usuario no encontrado"})
+        }
+        const hashedPassword = await bcrypt.hash(nuevaPassword, 10);
+        user.password = hashedPassword;
+        await user.save();
+        return res.status(200).json({ message: "Contraseña restablecida con éxito" });
+    }catch(error){
+        console.error("Error al restablecer contraseña:", error);
+        return res.status(400).json({ message: "El enlace es inválido o ha expirado" });
+    }
+}
+
 module.exports = {
     obtenerPerfil,
     actualizarPerfil,
@@ -209,5 +364,11 @@ module.exports = {
     seguir,
     dejarDeSeguir,
     getSeguidores,
-    getSiguiendo
+    getSiguiendo,
+    buscarUser,
+    obtenerUserPorId,
+    actualizarContraseña,
+    eliminarCuenta,
+    recuperarCuenta,
+    reiniciarContraseña
 };

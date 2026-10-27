@@ -120,3 +120,132 @@ export async function actualizarPerfil(datosNuevos) {
 
     return datos;
 }
+
+export async function buscarUsuarios(termino){
+  try{
+    const token = localStorage.getItem("token");
+    if(!token){
+      throw new Error("No se proporciono un token valido");
+    }
+    const res = await fetch(`http://localhost:3000/user/buscar?q=${termino}`,{
+      method: "GET",
+      headers:{
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      }
+    });
+    const datos = await res.json();
+    if(!res.ok){
+      throw new Error(datos.message || "Error al buscar al usuario");
+    }
+    return datos;
+  }catch(error){
+    console.log("Error en la peticion de busqueda",error);
+    throw error;
+  }
+}
+
+export async function seguirUsuario(id){
+  try{
+  const token = localStorage.getItem("token")
+  const res = await fetch(`http://localhost:3000/user/seguir/${id}`, {
+    method: "POST",
+    headers: {"Authorization": `Bearer ${token}`}
+  });
+  const data = await res.json();
+  if(!res.ok){ throw new Error(data.message || "Error al seguir"); }
+  return data
+  }catch(error){
+    console.log("Error en seguir al usuario", error);
+    throw error;
+  }
+}
+
+export async function dejarDeSeguir(id){
+  try{
+    const token = localStorage.getItem("token")
+    const res = await fetch(`http://localhost:3000/user/seguir/${id}`,{
+      method: "DELETE",
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+    const data = await res.json()
+    if(!res.ok){ throw new Error(data.message || "Error al dejar de seguir"); }
+    return data
+  }catch(error){
+    console.log("Error al dejar de seguir al usuario", error);
+    throw error;
+  }
+}
+
+export async function actualizarContraseña(passwordActual, nuevaPassword){
+  try{
+    const token = localStorage.getItem("token")
+    const res = await fetch("http://localhost:3000/user/password",{
+      method: "PATCH",
+      headers:{
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({ passwordActual, nuevaPassword }) 
+    });
+    const data = await res.json();
+    if(!res.ok){ throw new Error(data.message || "Error al actualizar la contraseña"); }
+    return data
+  }catch(error){
+    console.log("Error al actualizar contraseña",error)
+    throw error;
+  }
+}
+
+export async function eliminarCuenta(){
+  try{
+    const token = localStorage.getItem("token")
+    const res = await fetch("http://localhost:3000/user/eliminar",{
+      method:"DELETE",
+      headers:{
+        "Content-Type":"application/json",
+        "Authorization": `Bearer ${token}`
+      },
+    });
+    const data = await res.json()
+    if(!res.ok){ throw new Error(data.message || "Error al eliminar la cuenta"); }
+    return data
+  }catch(error){
+    console.log("Error al eliminar la cuenta",error)
+    throw error;
+  }
+}
+
+export async function recuperarCuenta(email){
+  try{
+    const res = await fetch("http://localhost:3000/user/recuperarCuenta",{
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json" },
+      body: JSON.stringify({ email })
+    });
+    const data = await res.json();
+    if (!res.ok) { throw new Error(data.message || "Error al solicitar la recuperación"); }
+    return data;
+  }catch(error){
+    console.log("Error en recuperar contraseña", error);
+    throw error;
+  }
+}
+
+export async function reiniciarContraseña(token, nuevaPassword){
+  try{
+    const res = await fetch("http://localhost:3000/user/reiniciarContrasena",{
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json" },
+        body: JSON.stringify({ token, nuevaPassword })
+    });
+    const data = await res.json();
+    if (!res.ok) { throw new Error(data.message || "Error al restablecer la contraseña"); }
+    return data;
+  }catch(error){
+    console.log("Error al reiniciar contraseña", error);
+    throw error;
+  }
+}
