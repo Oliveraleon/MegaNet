@@ -415,6 +415,8 @@ module.exports = {
     obtenerPerfil,
     actualizarPerfil,
     obtenerSeguidos,
+    obtenerSeguidoresIds,
+    obtenerAmigos,
     getFeed,
     getUsuarios,
     seguir,

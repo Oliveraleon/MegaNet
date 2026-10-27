@@ -1,7 +1,6 @@
 import "./Home.css"
-
 import { useEffect, useState } from "react"
-import { Navigate, useParams } from "react-router-dom"
+import { Navigate, useParams, Link } from "react-router-dom"
 import { estaLogueado, getUsuario } from "../api/auth"
 import axios from "axios"
 import FollowButton from "./FollowButton"
@@ -113,7 +112,13 @@ function PerfilUsuario() {
                             )}
                             {datos.amistad === "amigos" && (
                                 <button className="small-btn" onClick={eliminarAmistad}>Amigos ✓</button>
+                                
                             )}
+                            
+                            {(datos.amistad === "amigos" || (datos.loSigo && datos.meSigue)) && (
+                                <Link to={"/chat/" + datos.usuario.id} className="small-btn">Mensaje</Link>
+                            )}
+                            
                         </div>
 
                         {datos.publicaciones.length === 0 && (

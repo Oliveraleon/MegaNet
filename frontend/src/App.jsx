@@ -9,6 +9,8 @@ import ProfileEdit from "./components/profileEdit";
 import Conexiones from "./components/Conexiones"
 import PerfilUsuario from "./components/PerfilUsuario"
 import Amigos from "./components/Amigos"
+import Chat from "./components/Chat"
+import Servidores from "./components/Servidores"
 import { cerrarSesion, estaLogueado, getUsuario } from "./api/auth";
 
 function App() {
@@ -87,6 +89,13 @@ function App() {
                             </span>
                         </Link>
 
+                                                <Link to="/chat" style={{ textDecoration: "none", color: "#222", fontWeight: "600" }}>
+                            Chat
+                        </Link>
+                        <Link to="/servidores" style={{ textDecoration: "none", color: "#222", fontWeight: "600" }}>
+                            Servidores
+                        </Link>
+
                         <button
                             onClick={salir}
                             style={{
@@ -114,6 +123,9 @@ function App() {
                 <Route path="/conexiones" element={<Conexiones />} />
                 <Route path="/usuario/:id" element={<PerfilUsuario />} />
                 <Route path="/amigos" element={<Amigos />} />
+                <Route path="/chat" element={<Chat />} />
+                <Route path="/chat/:id" element={<Chat />} />
+                <Route path="/servidores" element={<Servidores />} />
             </Routes>
         </>
     );

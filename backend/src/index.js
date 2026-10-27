@@ -4,12 +4,13 @@ const { sequelize } = require("./config/db")
 const authRoute = require("./routes/Auth.routes.js");
 const profileRoute = require("./routes/user.routes.js");
 const postRoutes = require("./routes/Post.routes.js")
+const chatRoutes = require("./routes/chat.routes.js");
 require("./models/index.js");
 
 const server = express(); 
 
 server.use(cors())
-
+server.use("/chat", chatRoutes);
 server.use(express.json({ limit: '50mb' }));
 server.use(express.urlencoded({ limit: '50mb', extended: true }));
 
