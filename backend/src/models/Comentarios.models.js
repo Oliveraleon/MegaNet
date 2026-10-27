@@ -17,6 +17,19 @@ const Comentarios = sequelize.define(
             type: DataTypes.DATE,
             defaultValue: DataTypes.NOW,
         },
+        userId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+},
+    postId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+},
+activo: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: true,
+},
     },
     {
         tableName: "Comentarios",
