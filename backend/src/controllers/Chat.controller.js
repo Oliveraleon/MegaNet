@@ -418,6 +418,66 @@ const salirVoz = async (req, res) => {
     }
 };
 
+let senales = [];
+
+// Revisa que el canal sea de voz y que el usuario sea miembro del servidor
+const puedeUsarVoz = async (canalId, userId) => {
+    const canal = await Canales.findByPk(canalId);
+    if (!canal || canal.type !== "voz") {
+        return false;
+    }
+    const miembro = await buscarMiembroServidor(canal.servidorId, userId);
+    return miembro !== null;
+};
+
+const enviarSenal = async (req, res) => {
+    try {
+        const canalId = Number(req.params.id);
+        const { para, tipo, datos } = req.body;
+        if (!(await puedeUsarVoz(canalId, req.usuario.id))) {
+            return res.status(403).json({ message: "No podes usar este canal de voz" });
+        }
+
+        senales.push({
+            canalId: canalId,
+            de: req.usuario.id,
+            para: Number(para),
+            tipo: tipo,
+            datos: datos,
+            fecha: Date.now(),
+        });
+        res.status(201).json({ message: "Senal enviada" });
+    } catch (error) {
+        res.status(500).json({ message: "Error al enviar la senal", error: error.message });
+    }
+};
+
+
+const recibirSenales = async (req, res) => {
+    try {
+        const canalId = Number(req.params.id);
+        if (!(await puedeUsarVoz(canalId, req.usuario.id))) {
+            return res.status(403).json({ message: "No podes usar este canal de voz" });
+        }
+
+        const mias = [];
+        const resto = [];
+        for (let i = 0; i < senales.length; i++) {
+            const s = senales[i];
+            const vieja = Date.now() - s.fecha > 30000;
+            if (s.para === req.usuario.id && s.canalId === canalId) {
+                mias.push(s);
+            } else if (!vieja) {
+                resto.push(s);
+            }
+        }
+        senales = resto;
+        res.status(200).json({ senales: mias });
+    } catch (error) {
+        res.status(500).json({ message: "Error al recibir las senales", error: error.message });
+    }
+};
+
 module.exports = {
     getContactos,
     getMensajesPrivados,
@@ -437,5 +497,7 @@ module.exports = {
     getMensajesCanal,
     enviarMensajeCanal,
     entrarVoz,
-    salirVoz
+    salirVoz,
+    enviarSenal,
+    recibirSenales
 };

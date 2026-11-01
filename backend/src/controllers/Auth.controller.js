@@ -82,7 +82,8 @@ const login = async (req, res) => {
 
 const crearPublicacion = async (req, res) => {
     try {
-        const { content, multimedia } = req.body;
+        const { content } = req.body;
+        const multimedia = req.file ? req.file.filename : req.body.multimedia;
 
         if (!content || content.trim() === "") {
             return res.status(400).json({ message: "Escribi un texto para la publicacion" });

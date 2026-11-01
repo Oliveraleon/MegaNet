@@ -1,4 +1,4 @@
-import "./Home.css"
+import "./Chat.css"
 
 import { useEffect, useState } from "react"
 import { getUsuario } from "../api/auth"
@@ -6,7 +6,7 @@ import axios from "axios"
 
 // Ventana de chat que se usa para los chats privados, los grupos y los canales de texto.
 // Recibe por props la url de donde lee y a donde manda los mensajes.
-function VentanaMensajes({ url, titulo }) {
+function VentanaMensajes({ url, titulo, subtitulo, icono }) {
     const [mensajes, setMensajes] = useState([])
     const [texto, setTexto] = useState("")
     const [error, setError] = useState("")
@@ -46,37 +46,46 @@ function VentanaMensajes({ url, titulo }) {
     }
 
     return (
-        <div className="chat-ventana">
-            <h3 className="chat-titulo">{titulo}</h3>
+        <div className="ventana">
+            <div className="ventana-cabecera">
+                <div className="avatar-chat">{icono}</div>
+                <div>
+                    <h3>{titulo}</h3>
+                    {subtitulo && <span className="texto-suave">{subtitulo}</span>}
+                </div>
+            </div>
 
-            {error && <p className="home-error">{error}</p>}
+            {error && <p className="aviso-error">{error}</p>}
 
-            <div className="chat-mensajes">
+            <div className="mensajes">
                 <div>
                     {mensajes.length === 0 && (
-                        <p className="home-empty">Todavía no hay mensajes. ¡Escribí el primero!</p>
+                        <div className="vacio">
+                            <span className="vacio-icono">💬</span>
+                            <p>Todavía no hay mensajes. ¡Escribí el primero!</p>
+                        </div>
                     )}
 
                     {mensajes.map((m) => (
-                        <div key={m.id} className={m.autor.id === yo?.id ? "mensaje mio" : "mensaje"}>
-                            <strong>@{m.autor.username}</strong>
+                        <div key={m.id} className={m.autor.id === yo?.id ? "burbuja mia" : "burbuja"}>
+                            {m.autor.id !== yo?.id && <strong>@{m.autor.username}</strong>}
                             <p>{m.content}</p>
-                            <span className="post-date">
-                                {new Date(m.creationDate).toLocaleTimeString()}
+                            <span className="hora">
+                                {new Date(m.creationDate).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                             </span>
                         </div>
                     ))}
                 </div>
             </div>
 
-            <form className="chat-form" onSubmit={enviar}>
+            <form className="escribir" onSubmit={enviar}>
                 <input
                     type="text"
                     placeholder="Escribí un mensaje..."
                     value={texto}
                     onChange={(e) => setTexto(e.target.value)}
                 />
-                <button type="submit">Enviar</button>
+                <button type="submit" disabled={texto.trim() === ""}>Enviar ➤</button>
             </form>
         </div>
     )

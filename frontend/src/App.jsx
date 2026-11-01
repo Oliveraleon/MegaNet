@@ -17,6 +17,7 @@ import PerfilUsuario from "./components/PerfilUsuario"
 import Amigos from "./components/Amigos"
 import Chat from "./components/Chat"
 import Servidores from "./components/Servidores"
+import Secciones from "./components/Secciones"
 import { cerrarSesion, estaLogueado, getUsuario } from "./api/auth";
 
 function App() {
@@ -40,6 +41,12 @@ function App() {
         location.pathname === "/register" ||
         location.pathname === "/recuperarCuenta" ||
         location.pathname === "/reiniciarContraseña";
+
+    // Paginas que muestran las pestañas Publicaciones / Chats / Servidores
+    const esSeccion =
+        location.pathname === "/home" ||
+        location.pathname.startsWith("/chat") ||
+        location.pathname === "/servidores";
 
     return (
         <>
@@ -99,13 +106,6 @@ function App() {
                             </span>
                         </Link>
 
-                                                <Link to="/chat" style={{ textDecoration: "none", color: "#222", fontWeight: "600" }}>
-                            Chat
-                        </Link>
-                        <Link to="/servidores" style={{ textDecoration: "none", color: "#222", fontWeight: "600" }}>
-                            Servidores
-                        </Link>
-
                         <button
                             onClick={salir}
                             style={{
@@ -123,6 +123,7 @@ function App() {
                 )}
             </nav>
             <div style={{marginLeft: logueado && !esPaginaAuth ? "75px" : "0"}}>
+            {logueado && esSeccion && <Secciones />}
             <Routes>
                 <Route path="/" element={<Navigate to="/register" />} />
                 <Route path="/register" element={<Register />} />

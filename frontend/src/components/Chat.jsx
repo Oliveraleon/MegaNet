@@ -1,4 +1,4 @@
-import "./Home.css"
+import "./Chat.css"
 
 import { useEffect, useState } from "react"
 import { Navigate, useParams } from "react-router-dom"
@@ -18,6 +18,7 @@ function Chat() {
     const [nuevoMiembro, setNuevoMiembro] = useState("")
 
     // Formulario para crear un grupo
+    const [mostrarFormulario, setMostrarFormulario] = useState(false)
     const [nombreGrupo, setNombreGrupo] = useState("")
     const [seleccionados, setSeleccionados] = useState([])
     const [error, setError] = useState("")
@@ -81,6 +82,7 @@ function Chat() {
             await axios.post("http://localhost:3000/chat/grupos", { name: nombreGrupo, miembros: seleccionados }, config)
             setNombreGrupo("")
             setSeleccionados([])
+            setMostrarFormulario(false)
             setError("")
             cargar()
         } catch (err) {
@@ -117,113 +119,143 @@ function Chat() {
     }
 
     return (
-        <div className="home-container">
-            <div className="chat-layout">
-                <div className="chat-lista">
-                    <div className="tabs">
-                        <button
-                            className={tab === "privados" ? "tab active" : "tab"}
-                            onClick={() => setTab("privados")}
-                        >
-                            Privados
-                        </button>
-                        <button
-                            className={tab === "grupos" ? "tab active" : "tab"}
-                            onClick={() => setTab("grupos")}
-                        >
-                            Grupos
-                        </button>
-                    </div>
-
-                    {error && <p className="home-error">{error}</p>}
-
-                    {tab === "privados" && (
-                        <>
-                            {contactos.length === 0 && (
-                                <p className="home-empty">Agregá amigos o seguí a alguien que te siga para chatear.</p>
-                            )}
-                            {contactos.map((u) => (
-                                <button
-                                    key={u.id}
-                                    className={abierto?.tipo === "privado" && abierto.id === u.id ? "chat-item activo" : "chat-item"}
-                                    onClick={() => setAbierto({ tipo: "privado", id: u.id, nombre: "@" + u.username })}
-                                >
-                                    <div className="avatar">{u.username[0].toUpperCase()}</div>
-                                    @{u.username}
-                                </button>
-                            ))}
-                        </>
-                    )}
-
+        <div className="pagina-chat">
+            {/* ---------- Lista de la izquierda ---------- */}
+            <aside className="panel-lista">
+                <div className="panel-titulo">
+                    <h2>Mensajes</h2>
                     {tab === "grupos" && (
-                        <>
-                            {grupos.map((g) => (
-                                <button
-                                    key={g.id}
-                                    className={abierto?.tipo === "grupo" && abierto.id === g.id ? "chat-item activo" : "chat-item"}
-                                    onClick={() => abrirGrupo(g)}
-                                >
-                                    <div className="avatar">#</div>
-                                    {g.name}
-                                </button>
-                            ))}
+                        <button className="boton-chico" onClick={() => setMostrarFormulario(!mostrarFormulario)}>
+                            {mostrarFormulario ? "Cancelar" : "+ Nuevo grupo"}
+                        </button>
+                    )}
+                </div>
 
-                            <form className="chat-crear" onSubmit={crearGrupo}>
-                                <strong>Crear grupo</strong>
+                <div className="segmentado">
+                    <button className={tab === "privados" ? "activo" : ""} onClick={() => setTab("privados")}>
+                        👤 Privados
+                    </button>
+                    <button className={tab === "grupos" ? "activo" : ""} onClick={() => setTab("grupos")}>
+                        👥 Grupos
+                    </button>
+                </div>
+
+                {error && <p className="aviso-error">{error}</p>}
+
+                {tab === "privados" && (
+                    <div className="lista">
+                        {contactos.length === 0 && (
+                            <p className="texto-suave centrado">
+                                Agregá amigos o seguí a alguien que te siga para poder chatear.
+                            </p>
+                        )}
+                        {contactos.map((u) => (
+                            <button
+                                key={u.id}
+                                className={abierto?.tipo === "privado" && abierto.id === u.id ? "item activo" : "item"}
+                                onClick={() => setAbierto({ tipo: "privado", id: u.id, nombre: "@" + u.username })}
+                            >
+                                <div className="avatar-chat">{u.username[0].toUpperCase()}</div>
+                                <div className="item-texto">
+                                    <strong>@{u.username}</strong>
+                                    <span>Chat privado</span>
+                                </div>
+                            </button>
+                        ))}
+                    </div>
+                )}
+
+                {tab === "grupos" && (
+                    <div className="lista">
+                        {mostrarFormulario && (
+                            <form className="tarjeta-form" onSubmit={crearGrupo}>
                                 <input
                                     type="text"
                                     placeholder="Nombre del grupo"
                                     value={nombreGrupo}
                                     onChange={(e) => setNombreGrupo(e.target.value)}
                                 />
-                                {contactos.map((u) => (
-                                    <label key={u.id}>
-                                        <input
-                                            type="checkbox"
-                                            checked={seleccionados.includes(u.id)}
-                                            onChange={() => marcar(u.id)}
-                                        />
-                                        @{u.username}
-                                    </label>
-                                ))}
-                                <button type="submit" className="small-btn">Crear</button>
+                                <span className="texto-suave">Elegí quiénes van a estar:</span>
+                                <div className="chips">
+                                    {contactos.map((u) => (
+                                        <button
+                                            type="button"
+                                            key={u.id}
+                                            className={seleccionados.includes(u.id) ? "chip marcado" : "chip"}
+                                            onClick={() => marcar(u.id)}
+                                        >
+                                            {seleccionados.includes(u.id) ? "✓ " : "+ "}@{u.username}
+                                        </button>
+                                    ))}
+                                </div>
+                                <button type="submit" className="boton">Crear grupo</button>
                             </form>
-                        </>
-                    )}
-                </div>
+                        )}
 
-                <div className="chat-derecha">
-                    {!abierto && <p className="home-empty">Elegí un chat de la izquierda.</p>}
+                        {grupos.length === 0 && !mostrarFormulario && (
+                            <p className="texto-suave centrado">Todavía no estás en ningún grupo.</p>
+                        )}
+                        {grupos.map((g) => (
+                            <button
+                                key={g.id}
+                                className={abierto?.tipo === "grupo" && abierto.id === g.id ? "item activo" : "item"}
+                                onClick={() => abrirGrupo(g)}
+                            >
+                                <div className="avatar-chat grupo">{g.name[0].toUpperCase()}</div>
+                                <div className="item-texto">
+                                    <strong>{g.name}</strong>
+                                    <span>Grupo</span>
+                                </div>
+                            </button>
+                        ))}
+                    </div>
+                )}
+            </aside>
 
-                    {abierto && abierto.tipo === "grupo" && (
-                        <div className="chat-info">
-                            <span>
-                                Miembros:{" "}
-                                {miembros.map((m) => (
-                                    <span key={m.id} className="etiqueta">@{m.username}</span>
-                                ))}
-                            </span>
+            {/* ---------- Chat abierto ---------- */}
+            <section className="panel-principal">
+                {!abierto && (
+                    <div className="vacio grande">
+                        <span className="vacio-icono">💬</span>
+                        <h3>Tus mensajes</h3>
+                        <p>Elegí un chat o un grupo de la izquierda para empezar a hablar.</p>
+                    </div>
+                )}
 
-                            <div className="post-actions">
-                                {abierto.ownerId === yo?.id && (
-                                    <>
-                                        <select value={nuevoMiembro} onChange={(e) => setNuevoMiembro(e.target.value)}>
-                                            <option value="">Agregar contacto...</option>
-                                            {contactos.map((u) => (
-                                                <option key={u.id} value={u.id}>@{u.username}</option>
-                                            ))}
-                                        </select>
-                                        <button className="small-btn" onClick={agregarMiembro}>Agregar</button>
-                                    </>
-                                )}
-                                <button className="small-btn danger" onClick={salirDelGrupo}>Salir</button>
-                            </div>
+                {abierto && abierto.tipo === "grupo" && (
+                    <div className="barra-grupo">
+                        <div className="chips">
+                            {miembros.map((m) => (
+                                <span key={m.id} className="chip fijo">@{m.username}</span>
+                            ))}
                         </div>
-                    )}
+                        <div className="acciones">
+                            {abierto.ownerId === yo?.id && (
+                                <>
+                                    <select value={nuevoMiembro} onChange={(e) => setNuevoMiembro(e.target.value)}>
+                                        <option value="">Agregar contacto...</option>
+                                        {contactos.map((u) => (
+                                            <option key={u.id} value={u.id}>@{u.username}</option>
+                                        ))}
+                                    </select>
+                                    <button className="boton-chico" onClick={agregarMiembro}>Agregar</button>
+                                </>
+                            )}
+                            <button className="boton-chico peligro" onClick={salirDelGrupo}>Salir</button>
+                        </div>
+                    </div>
+                )}
 
-                    {abierto && <VentanaMensajes key={url} url={url} titulo={abierto.nombre} />}
-                </div>
-            </div>
+                {abierto && (
+                    <VentanaMensajes
+                        key={url}
+                        url={url}
+                        titulo={abierto.nombre}
+                        subtitulo={abierto.tipo === "grupo" ? miembros.length + " miembros" : "Chat privado"}
+                        icono={abierto.tipo === "grupo" ? abierto.nombre[0].toUpperCase() : abierto.nombre[1].toUpperCase()}
+                    />
+                )}
+            </section>
         </div>
     )
 }

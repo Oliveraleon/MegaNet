@@ -1,0 +1,825 @@
+/* =====================================================
+   Chats, grupos, servidores y canales de voz
+   (archivo propio para no depender de Home.css)
+   ===================================================== */
+
+:root {
+    --rosa: #eb3b6f;
+    --rosa-oscuro: #c9265a;
+    --rosa-claro: #fde7ee;
+    --verde: #22c55e;
+    --rojo: #e5484d;
+    --fondo: #f3f5f9;
+    --tarjeta: #ffffff;
+    --borde: #e8ebf1;
+    --texto: #202638;
+    --suave: #6b7280;
+    --degradado: linear-gradient(135deg, #eb3b6f, #00c853);
+}
+
+/* ---------- Menú Publicaciones / Chats / Servidores ---------- */
+
+.secciones {
+    display: flex;
+    justify-content: center;
+    gap: 0.4rem;
+    width: fit-content;
+    margin: 1rem auto;
+    padding: 0.35rem;
+    background: var(--tarjeta);
+    border-radius: 999px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.07);
+}
+
+.seccion-boton {
+    padding: 0.55rem 1.3rem;
+    border-radius: 999px;
+    color: var(--suave);
+    font-weight: 600;
+    text-decoration: none;
+    transition: background 0.2s, color 0.2s;
+}
+
+.seccion-boton:hover {
+    background: var(--fondo);
+    color: var(--texto);
+}
+
+.seccion-boton.activo {
+    background: var(--rosa);
+    color: #ffffff;
+}
+
+/* ---------- Estructura de la página ---------- */
+
+.pagina-chat {
+    display: flex;
+    max-width: 1200px;
+    height: calc(100vh - 180px);
+    min-height: 520px;
+    margin: 0 auto 1.5rem auto;
+    background: var(--tarjeta);
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+    color: var(--texto);
+}
+
+.panel-lista,
+.panel-canales {
+    width: 290px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--borde);
+    background: #fafbfd;
+}
+
+.panel-canales {
+    width: 250px;
+}
+
+.panel-principal {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.panel-titulo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1.1rem 1rem 0.8rem 1rem;
+}
+
+.panel-titulo h2 {
+    margin: 0;
+    font-size: 1.2rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.lista {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.4rem 0.6rem 0.8rem 0.6rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+/* ---------- Botones ---------- */
+
+.boton {
+    padding: 0.65rem 1rem;
+    border: none;
+    border-radius: 10px;
+    background: var(--rosa);
+    color: #ffffff;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.boton:hover {
+    background: var(--rosa-oscuro);
+}
+
+.boton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.boton-secundario {
+    background: var(--fondo);
+    color: var(--texto);
+}
+
+.boton-secundario:hover {
+    background: var(--borde);
+}
+
+.boton-verde {
+    background: var(--verde);
+}
+
+.boton-verde:hover {
+    background: #16a34a;
+}
+
+.boton-rojo {
+    background: var(--rojo);
+}
+
+.boton-rojo:hover {
+    background: #c9363b;
+}
+
+.boton-chico {
+    padding: 0.35rem 0.8rem;
+    border: 1px solid var(--borde);
+    border-radius: 999px;
+    background: var(--tarjeta);
+    color: var(--texto);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.boton-chico:hover {
+    border-color: var(--rosa);
+    color: var(--rosa);
+}
+
+.boton-chico.peligro {
+    color: var(--rojo);
+    border-color: #f5c2c4;
+}
+
+.boton-icono {
+    border: none;
+    background: transparent;
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 0.3rem;
+    border-radius: 8px;
+}
+
+.boton-icono:hover {
+    background: var(--borde);
+}
+
+.boton-redondo {
+    width: 48px;
+    height: 48px;
+    border: none;
+    border-radius: 50%;
+    background: var(--fondo);
+    font-size: 1.3rem;
+    cursor: pointer;
+}
+
+.boton-redondo:hover {
+    background: var(--borde);
+}
+
+.boton-redondo.apagado {
+    background: #fde2e3;
+}
+
+/* ---------- Selector de dos opciones (Privados / Grupos, Texto / Voz) ---------- */
+
+.segmentado {
+    display: flex;
+    gap: 0.3rem;
+    margin: 0 1rem 0.6rem 1rem;
+    padding: 0.25rem;
+    background: var(--fondo);
+    border-radius: 12px;
+}
+
+.campo .segmentado {
+    margin: 0;
+}
+
+.segmentado button {
+    flex: 1;
+    padding: 0.45rem;
+    border: none;
+    border-radius: 9px;
+    background: transparent;
+    color: var(--suave);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.segmentado button.activo {
+    background: var(--tarjeta);
+    color: var(--rosa);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+/* ---------- Items de la lista de chats ---------- */
+
+.item {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    width: 100%;
+    padding: 0.55rem 0.6rem;
+    border: none;
+    border-radius: 12px;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+    color: var(--texto);
+}
+
+.item:hover {
+    background: var(--fondo);
+}
+
+.item.activo {
+    background: var(--rosa-claro);
+}
+
+.item-texto {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.item-texto strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.item-texto span {
+    font-size: 0.8rem;
+    color: var(--suave);
+}
+
+.avatar-chat {
+    width: 42px;
+    height: 42px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: var(--degradado);
+    color: #ffffff;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.avatar-chat.grupo {
+    border-radius: 12px;
+}
+
+.avatar-mini {
+    width: 26px;
+    height: 26px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: var(--degradado);
+    color: #ffffff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ---------- Formularios ---------- */
+
+.tarjeta-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    margin-bottom: 0.6rem;
+    padding: 0.8rem;
+    background: var(--tarjeta);
+    border: 1px solid var(--borde);
+    border-radius: 14px;
+}
+
+.pagina-chat input[type="text"],
+.pagina-chat select,
+.modal-caja input[type="text"],
+.modal-caja select {
+    width: 100%;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid var(--borde);
+    border-radius: 10px;
+    background: var(--tarjeta);
+    color: var(--texto);
+    font: inherit;
+    outline: none;
+}
+
+.pagina-chat input[type="text"]:focus,
+.pagina-chat select:focus,
+.modal-caja input[type="text"]:focus,
+.modal-caja select:focus {
+    border-color: var(--rosa);
+}
+
+.chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+
+.chip {
+    padding: 0.3rem 0.7rem;
+    border: 1px solid var(--borde);
+    border-radius: 999px;
+    background: var(--tarjeta);
+    color: var(--texto);
+    font-size: 0.82rem;
+    cursor: pointer;
+}
+
+.chip.marcado {
+    background: var(--rosa);
+    border-color: var(--rosa);
+    color: #ffffff;
+}
+
+.chip.fijo {
+    cursor: default;
+    background: var(--fondo);
+}
+
+/* ---------- Ventana de mensajes ---------- */
+
+.ventana,
+.voz {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.ventana-cabecera {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.9rem 1.2rem;
+    border-bottom: 1px solid var(--borde);
+}
+
+.ventana-cabecera h3 {
+    margin: 0;
+    font-size: 1.05rem;
+}
+
+.texto-suave {
+    color: var(--suave);
+    font-size: 0.85rem;
+    margin: 0;
+}
+
+.centrado {
+    text-align: center;
+    padding: 1.5rem 0.5rem;
+}
+
+/* column-reverse hace que la lista arranque abajo, mostrando siempre el último mensaje */
+.mensajes {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column-reverse;
+    padding: 1rem 1.2rem;
+    background: var(--fondo);
+}
+
+.burbuja {
+    width: fit-content;
+    max-width: 65%;
+    margin: 0.25rem 0;
+    padding: 0.55rem 0.85rem;
+    border-radius: 16px 16px 16px 4px;
+    background: var(--tarjeta);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.burbuja strong {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--rosa);
+}
+
+.burbuja p {
+    margin: 0.15rem 0;
+    word-break: break-word;
+    line-height: 1.4;
+}
+
+.burbuja.mia {
+    margin-left: auto;
+    border-radius: 16px 16px 4px 16px;
+    background: var(--rosa);
+    color: #ffffff;
+}
+
+.hora {
+    display: block;
+    text-align: right;
+    font-size: 0.7rem;
+    opacity: 0.7;
+}
+
+.escribir {
+    display: flex;
+    gap: 0.6rem;
+    padding: 0.8rem 1.2rem;
+    border-top: 1px solid var(--borde);
+}
+
+.escribir input[type="text"] {
+    flex: 1;
+    border-radius: 999px;
+    padding: 0.7rem 1rem;
+    background: var(--fondo);
+}
+
+.escribir button {
+    padding: 0.6rem 1.3rem;
+    border: none;
+    border-radius: 999px;
+    background: var(--rosa);
+    color: #ffffff;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.escribir button:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.barra-grupo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    padding: 0.6rem 1.2rem;
+    border-bottom: 1px solid var(--borde);
+    background: #fafbfd;
+}
+
+.barra-grupo .acciones {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+}
+
+.barra-grupo select {
+    width: auto;
+    padding: 0.35rem 0.6rem;
+}
+
+/* ---------- Estados vacíos y avisos ---------- */
+
+.vacio {
+    margin: auto;
+    padding: 2rem 1rem;
+    text-align: center;
+    color: var(--suave);
+}
+
+.vacio.grande h3 {
+    margin: 0.5rem 0 0.3rem 0;
+    color: var(--texto);
+}
+
+.vacio-icono {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: var(--rosa-claro);
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--rosa);
+}
+
+.aviso-error {
+    margin: 0.5rem 1rem;
+    padding: 0.6rem 0.8rem;
+    border-radius: 10px;
+    background: #fdecec;
+    color: #b42318;
+    font-size: 0.85rem;
+}
+
+/* ---------- Servidores: columna de iconos ---------- */
+
+.rail {
+    width: 76px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.9rem 0;
+    background: #eef0f5;
+    overflow-y: auto;
+}
+
+.rail-servidor {
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+    border: none;
+    border-radius: 50%;
+    background: var(--degradado);
+    color: #ffffff;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: border-radius 0.2s, box-shadow 0.2s;
+}
+
+.rail-servidor:hover,
+.rail-servidor.activo {
+    border-radius: 16px;
+}
+
+.rail-servidor.activo {
+    box-shadow: 0 0 0 3px #ffffff, 0 0 0 5px var(--rosa);
+}
+
+.rail-crear {
+    background: var(--tarjeta);
+    color: var(--verde);
+    font-size: 1.5rem;
+    border: 2px dashed #c7ccd6;
+}
+
+/* ---------- Servidores: canales ---------- */
+
+.seccion {
+    margin: 0.9rem 0 0.3rem 0.4rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--suave);
+}
+
+.canal {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    width: 100%;
+    padding: 0.45rem 0.6rem;
+    border: none;
+    border-radius: 9px;
+    background: transparent;
+    color: var(--suave);
+    font-size: 0.95rem;
+    text-align: left;
+    cursor: pointer;
+}
+
+.canal:hover {
+    background: var(--fondo);
+    color: var(--texto);
+}
+
+.canal.activo {
+    background: var(--rosa-claro);
+    color: var(--rosa-oscuro);
+    font-weight: 600;
+}
+
+.canal-icono {
+    width: 20px;
+    text-align: center;
+    opacity: 0.8;
+}
+
+.conectado {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.15rem 0 0.15rem 2.1rem;
+    font-size: 0.85rem;
+    color: var(--texto);
+}
+
+.punto-verde {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--verde);
+}
+
+.miembro {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.3rem 0.4rem;
+    font-size: 0.9rem;
+}
+
+.barra-usuario {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.7rem 0.8rem;
+    border-top: 1px solid var(--borde);
+    background: #f3f5f9;
+}
+
+.barra-usuario strong {
+    flex: 1;
+    font-size: 0.9rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ---------- Canal de voz ---------- */
+
+.icono-voz {
+    font-size: 1.2rem;
+}
+
+.voz-participantes {
+    flex: 1;
+    display: flex;
+    flex-wrap: wrap;
+    align-content: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: 1.5rem;
+    background: var(--fondo);
+    overflow-y: auto;
+}
+
+.participante {
+    width: 160px;
+    padding: 1.2rem 0.8rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    background: var(--tarjeta);
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.participante.yo {
+    box-shadow: 0 0 0 2px var(--verde);
+}
+
+.participante-avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: var(--degradado);
+    color: #ffffff;
+    font-size: 1.6rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.voz-controles {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 1rem;
+    border-top: 1px solid var(--borde);
+}
+
+/* ---------- Ventanas emergentes (crear servidor, administrar, audio) ---------- */
+
+.modal-fondo {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background: rgba(15, 18, 30, 0.55);
+}
+
+.modal-caja {
+    width: 100%;
+    max-width: 420px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    padding: 1.3rem;
+    background: var(--tarjeta);
+    border-radius: 18px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+    color: var(--texto);
+}
+
+.modal-titulo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-titulo h3 {
+    margin: 0;
+}
+
+.campo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+}
+
+.campo span {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--suave);
+}
+
+.medidor {
+    height: 10px;
+    border-radius: 999px;
+    background: var(--fondo);
+    overflow: hidden;
+}
+
+.medidor-barra {
+    height: 100%;
+    background: linear-gradient(90deg, var(--verde), #facc15, var(--rojo));
+    transition: width 0.1s;
+}
+
+.estado-audio {
+    margin: 0;
+    padding: 0.6rem 0.8rem;
+    border-radius: 10px;
+    background: var(--rosa-claro);
+    color: var(--rosa-oscuro);
+    font-size: 0.9rem;
+}
+
+/* ---------- Pantallas chicas ---------- */
+
+@media (max-width: 800px) {
+    .pagina-chat {
+        height: auto;
+        flex-direction: column;
+        margin: 0 0.5rem 1rem 0.5rem;
+    }
+
+    .panel-lista,
+    .panel-canales {
+        width: 100%;
+        max-height: 300px;
+        border-right: none;
+        border-bottom: 1px solid var(--borde);
+    }
+
+    .rail {
+        width: 100%;
+        flex-direction: row;
+        padding: 0.6rem;
+    }
+
+    .panel-principal {
+        min-height: 480px;
+    }
+}

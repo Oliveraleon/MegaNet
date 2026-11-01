@@ -1,5 +1,5 @@
 const { Router } = require("express");
-const { getContactos, getMensajesPrivados, enviarMensajePrivado, getGrupos, crearGrupo, getGrupo, agregarMiembroGrupo, salirDelGrupo, getMensajesGrupo, enviarMensajeGrupo, getServidores, crearServidor, getServidor, agregarMiembroServidor, crearCanal, getMensajesCanal, enviarMensajeCanal, entrarVoz, salirVoz } = require("../controllers/Chat.controller.js");
+const { getContactos, getMensajesPrivados, enviarMensajePrivado, getGrupos, crearGrupo, getGrupo, agregarMiembroGrupo, salirDelGrupo, getMensajesGrupo, enviarMensajeGrupo, getServidores, crearServidor, getServidor, agregarMiembroServidor, crearCanal, getMensajesCanal, enviarMensajeCanal, entrarVoz, salirVoz, enviarSenal, recibirSenales } = require("../controllers/Chat.controller.js");
 const { verificarToken } = require("../middelwares/Auth.middleware.js");
 
 const route = Router();
@@ -28,5 +28,7 @@ route.get('/canales/:id/mensajes', verificarToken, getMensajesCanal)
 route.post('/canales/:id/mensajes', verificarToken, enviarMensajeCanal)
 route.post('/canales/:id/voz', verificarToken, entrarVoz)
 route.delete('/canales/:id/voz', verificarToken, salirVoz)
+route.post('/canales/:id/senales', verificarToken, enviarSenal)
+route.get('/canales/:id/senales', verificarToken, recibirSenales)
 
 module.exports = route;
