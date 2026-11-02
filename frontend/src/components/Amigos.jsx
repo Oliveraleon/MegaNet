@@ -1,8 +1,7 @@
-import "./Home.css"
-
 import { useEffect, useState } from "react"
 import { Link, Navigate } from "react-router-dom"
 import { estaLogueado } from "../api/auth"
+import "./Amigos.css"
 import axios from "axios"
 
 function Amigos() {

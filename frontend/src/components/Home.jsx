@@ -129,19 +129,6 @@ function Home() {
 
     return (
         <div className="home">
-            <nav className="home-nav">
-                <strong>MegaNet</strong>
-                {logueado ? (
-                    <button type="button" onClick={salir}>
-                        Cerrar sesión
-                    </button>
-                ) : (
-                    <Link to="/login">
-                        <button type="button">Iniciar sesión</button>
-                    </Link>
-                )}
-            </nav>
-
             <main className="home-contenido" style={{ width: "100%", maxWidth: "600px", margin: "0 auto" }}>
                 <h1>
                     {logueado ? `Bienvenido/a, ${user?.username || user?.email || "Usuario"}` : "Bienvenido/a a MegaNet"}
