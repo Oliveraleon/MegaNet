@@ -18,7 +18,6 @@ function Home() {
     const [mensaje, setMensaje] = useState("")
     const [error, setError] = useState("")
 
-    // Estados para likes, menú de opciones y modal de confirmación (idénticos a Profile)
     const [cambioLike, setCambioLike] = useState({})
     const [menuPostAbiertoId, setMenuPostAbiertoId] = useState(null)
     const [postAEliminar, setPostAEliminar] = useState(null)
@@ -40,8 +39,6 @@ function Home() {
             const postData = res.data.posts || []
             setTipo(res.data.tipo)
             setPublicaciones(postData)
-
-            // Sincronizamos los likes iniciales desde el backend exactamente igual que en Profile
             const estadoLikes = {}
             postData.forEach(p => {
                 const postId = p.id || p.id_publicacion
@@ -69,7 +66,6 @@ function Home() {
         return <Navigate to="/login" replace />
     }
 
-    // Funciones para eliminar la publicación con confirmación (idénticas a Profile)
     const iniciarEliminacionPost = (postId) => {
         setPostAEliminar(postId)
         setMenuPostAbiertoId(null)
@@ -125,8 +121,7 @@ function Home() {
                     ) : (
                         publicaciones.map((post) => {
                             const postId = post.id || post.id_publicacion
-                            
-                            // Extraemos los datos del autor que vienen en el include del backend
+
                             const autor = post.autor || {}
                             const autorId = post.userId || autor.id
                             const esMiPost = user && Number(autorId) === Number(user?.id);
@@ -152,7 +147,6 @@ function Home() {
                                                 </span>
                                             </div>
                                         </Link>
-                                        {/* Menú de tres puntos SOLO si el post es tuyo */}
                                         {puedeBorrar && (
                                             <div style={{ position: "relative" }}>
                                                 <button 
@@ -212,7 +206,6 @@ function Home() {
                                     </div>
                                 )}
 
-                                    {/* Botones de acción (Likes y comentarios idénticos a Profile) */}
                                     <div className="post-actions" style={{ display: "flex", gap: "20px", marginTop: "15px", borderTop: "1px solid #eee", paddingTop: "10px" }}>
                                         <button className="action-btn"
                                             type="button" 
@@ -276,8 +269,6 @@ function Home() {
                     )}
                 </section>
             </main>
-
-            {/* Ventana modal de confirmación para eliminar post */}
             {postAEliminar && (
                 <div style={{
                     position: "fixed",

@@ -7,7 +7,6 @@ const {
 } = require("../controllers/Admin.controller.js");
 const { verificarToken, verificarRol } = require("../middelwares/Auth.middleware.js");
 
-// Todas estas rutas requieren estar logueado Y ser admin
 router.get("/usuarios", verificarToken, verificarRol, obtenerTodosLosUsuarios);
 router.delete("/publicaciones/:id", verificarToken, verificarRol, adminEliminarPublicacion);
 router.delete("/comentarios/:comentarioId", verificarToken, verificarRol, adminEliminarComentario);

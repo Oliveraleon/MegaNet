@@ -1,4 +1,4 @@
-/* --- ESTILOS GENERALES DE LA VISTA DE CONEXIONES --- */
+
 .home-container {
     max-width: 600px;
     margin: 30px auto;
@@ -14,7 +14,7 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
 }
 
-/* --- PESTAÑAS (TABS) --- */
+
 .tabs {
     display: flex;
     border-bottom: 1px solid #eaeaea;
@@ -43,7 +43,6 @@
     border-bottom: 2px solid #007bff;
 }
 
-/* --- LISTAS Y FILAS DE USUARIOS --- */
 .home-empty {
     text-align: center;
     color: #888;
@@ -97,7 +96,6 @@
     object-fit: cover;
 }
 
-/* --- BOTÓN DE SEGUIR / SIGUIENDO --- */
 .follow-btn {
     background-color: #0095f6;
     color: white;
@@ -124,7 +122,6 @@
     background-color: #dbdbdb;
 }
 
-/* --- VENTANA MODAL (MENÚ Y CONFIRMACIÓN) --- */
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -200,7 +197,6 @@
     font-weight: 600;
 }
 
-/* --- PANTALLA DE CONFIRMACIÓN DE DEJAR DE SEGUIR --- */
 .modal-confirm {
     padding: 24px;
     text-align: center;

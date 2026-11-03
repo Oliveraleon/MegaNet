@@ -4,12 +4,9 @@ const { subirImagen, subirArchivo } = require("../middelwares/upload.js");
 
 const route = Router();
 
-// Chat privado
 route.get('/contactos', verificarToken, getContactos)
 route.get('/privado/:id', verificarToken, getMensajesPrivados)
 route.post('/privado/:id', verificarToken, subirArchivo, enviarMensajePrivado)
-
-// Grupos
 route.get('/grupos', verificarToken, getGrupos)
 route.post('/grupos', verificarToken, crearGrupo)
 route.get('/grupos/:id', verificarToken, getGrupo)
@@ -17,8 +14,6 @@ route.post('/grupos/:id/miembros', verificarToken, agregarMiembroGrupo)
 route.delete('/grupos/:id/miembros', verificarToken, salirDelGrupo)
 route.get('/grupos/:id/mensajes', verificarToken, getMensajesGrupo)
 route.post('/grupos/:id/mensajes', verificarToken, subirArchivo, enviarMensajeGrupo)
-
-// Servidores y canales
 route.get('/servidores', verificarToken, getServidores)
 route.post('/servidores', verificarToken, crearServidor)
 route.get('/servidores/:id', verificarToken, getServidor)

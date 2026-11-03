@@ -31,7 +31,7 @@ function SubirPost() {
         formulario.append("content", contenido)
 
         if (imagen) {
-            formulario.append("imagen", imagen) // O el nombre de campo que espere tu multer para publicaciones
+            formulario.append("imagen", imagen) 
         }
 
         try {

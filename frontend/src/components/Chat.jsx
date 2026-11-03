@@ -14,12 +14,10 @@ function Chat() {
     const [contactos, setContactos] = useState([])
     const [grupos, setGrupos] = useState([])
 
-    // Chat abierto: null o { tipo: "privado" | "grupo", id, nombre }
     const [abierto, setAbierto] = useState(null)
     const [miembros, setMiembros] = useState([])
     const [nuevoMiembro, setNuevoMiembro] = useState("")
 
-    // Formulario para crear un grupo
     const [mostrarFormulario, setMostrarFormulario] = useState(false)
     const [nombreGrupo, setNombreGrupo] = useState("")
     const [seleccionados, setSeleccionados] = useState([])
@@ -113,7 +111,6 @@ function Chat() {
 
     return (
         <div className="pagina-chat">
-            {/* ---------- Lista de la izquierda ---------- */}
             <aside className="panel-lista">
                 <div className="panel-titulo">
                     <h2>Mensajes</h2>
@@ -198,8 +195,6 @@ function Chat() {
                     </div>
                 )}
             </aside>
-
-            {/* ---------- Chat abierto ---------- */}
             <section className="panel-principal">
                 {!abierto && (
                     <div className="vacio grande">

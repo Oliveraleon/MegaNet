@@ -45,7 +45,7 @@ const carpeta = path.join(__dirname, "..", "..", "uploads");
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, "uploads/"); // Carpeta destino
+        cb(null, "uploads/");
     },
     filename: (req, file, cb) => {
         const nombreLimpio = file.originalname.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_.-]/g, "");

@@ -144,31 +144,28 @@ textarea {
     box-sizing: border-box;
 }
 
-/* Contenedor principal de cada post tipo tarjeta */
 .post-card {
     background: #ffffff;
     border: 1px solid #dbdbdb;
     border-radius: 12px;
     padding: 16px;
     margin-bottom: 20px;
-    max-width: 600px; /* Ancho máximo uniforme para todos */
+    max-width: 600px;
     margin-left: auto;
     margin-right: auto;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
 }
 
-/* Texto del post */
 .post-text {
     font-size: 15px;
     color: #262626;
     margin-bottom: 12px;
-    word-break: break-word; /* Evita que textos largos rompan la tarjeta */
+    word-break: break-word;
 }
 
-/* Contenedor de la imagen/video para mantener proporciones */
 .post-media-container {
     width: 100%;
-    max-height: 450px; /* Altura máxima para que no sean infinitos */
+    max-height: 450px;
     background: #000;
     border-radius: 8px;
     overflow: hidden;
@@ -178,14 +175,12 @@ textarea {
     margin-bottom: 12px;
 }
 
-/* La imagen o video se adapta sin deformarse */
 .post-media {
     width: 100%;
     max-height: 450px;
-    object-fit: contain; /* Muestra la imagen completa sin recortarla feo */
+    object-fit: contain;
 }
 
-/* Fecha de la publicación */
 .post-date {
     font-size: 12px;
     color: #8e8e8e;
@@ -193,7 +188,6 @@ textarea {
     margin-bottom: 10px;
 }
 
-/* Barra inferior para botones de like y comentarios */
 .post-actions {
     display: flex;
     border-top: 1px solid #efefef;
@@ -255,7 +249,7 @@ textarea {
     gap: 12px;
     text-decoration: none;
     color: inherit;
-    flex-grow: 1; /* Ocupa el espacio disponible para empujar la fecha a la derecha si querés */
+    flex-grow: 1;
 }
 
 .post-header-link:hover .post-username {

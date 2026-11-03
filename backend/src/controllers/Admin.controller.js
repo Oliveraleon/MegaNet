@@ -3,11 +3,10 @@ const Publicaciones = require("../models/Publicaciones.models.js");
 const Comentarios = require("../models/Comentarios.models.js");
 const Reacciones = require("../models/Reacciones.models.js");
 
-// 1. Obtener todos los usuarios del sistema (Acción exclusiva de admin)
 const obtenerTodosLosUsuarios = async (req, res) => {
     try {
         const usuarios = await User.findAll({
-            attributes: { exclude: ["password"] } // Ocultamos las contraseñas por seguridad
+            attributes: { exclude: ["password"] }
         });
         res.status(200).json(usuarios);
     } catch (error) {
@@ -15,7 +14,6 @@ const obtenerTodosLosUsuarios = async (req, res) => {
     }
 };
 
-// 2. Eliminar cualquier publicación (sin importar de quién sea)
 const adminEliminarPublicacion = async (req, res) => {
     try {
         const post = await Publicaciones.findByPk(req.params.id);
@@ -23,7 +21,6 @@ const adminEliminarPublicacion = async (req, res) => {
             return res.status(404).json({ message: "La publicación no existe" });
         }
 
-        // Borramos reacciones, comentarios asociados y el post
         await Reacciones.destroy({ where: { postId: post.id } });
         await Comentarios.destroy({ where: { postId: post.id } });
         await post.destroy();
@@ -34,7 +31,6 @@ const adminEliminarPublicacion = async (req, res) => {
     }
 };
 
-// 3. Eliminar cualquier comentario (sin importar de quién sea)
 const adminEliminarComentario = async (req, res) => {
     try {
         const comentario = await Comentarios.findByPk(req.params.comentarioId);

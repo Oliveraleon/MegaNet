@@ -25,7 +25,6 @@ function Profile(){
     const config = { headers: { Authorization: "Bearer " + token } }
     const miPerfil = !id || (usuarioLogueado && Number(id) === Number(usuarioLogueado.id));
 
-    // Funciones de amistad extraídas de PerfilUsuario.jsx
     const enviarSolicitud = async () => {
         try {
             await axios.post("http://localhost:3000/user/amistad/" + id, {}, config)
@@ -69,7 +68,6 @@ function Profile(){
             setSiguiendo(res2.data.usuarios)
             setSeguidos(res2.data.seguidos)
 
-            // Carga adicional de datos de perfil/amistad si no es mi perfil
             if (idValido) {
                 try {
                     const resPerfilUsuario = await axios.get("http://localhost:3000/user/perfil/" + idValido, config)
@@ -117,7 +115,6 @@ function Profile(){
 
             setPublicaciones(postData);
 
-            // Sincronizamos los likes iniciales desde el backend
             const estadoLikes = {};
             postData.forEach(p => {
                 const postId = p.id || p.id_publicacion;
@@ -152,7 +149,6 @@ function Profile(){
         }
     };
 
-    // Funciones para eliminar la publicación con confirmación
     const iniciarEliminacionPost = (postId) => {
         setPostAEliminar(postId);
         setMenuPostAbiertoId(null);
@@ -170,7 +166,6 @@ function Profile(){
             const data = await res.json();
             if (!res.ok) throw new Error(data.message || "Error al eliminar la publicación");
 
-            // Actualizamos el estado para remover el post al instante
             setPublicaciones(publicaciones.filter(p => (p.id || p.id_publicacion) !== postAEliminar));
         } catch (error) {
             console.error("Error al eliminar el post:", error);
@@ -430,7 +425,6 @@ function Profile(){
                 </div>
             </div>
 
-            {/* --- VENTANA MODAL DE CONFIRMACIÓN PARA EL POST --- */}
             {postAEliminar && (
                 <div style={{
                     position: "fixed",

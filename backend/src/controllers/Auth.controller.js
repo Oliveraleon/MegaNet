@@ -82,7 +82,6 @@ const login = async (req, res) => {
         res.status(500).json({ message: "Error logging in", error: error.message });
     }
 };
-// ---------- Publicaciones, likes y comentarios ----------
 
 const crearPublicacion = async (req, res) => {
     try {
@@ -96,7 +95,6 @@ const crearPublicacion = async (req, res) => {
             return res.status(400).json({ message: "El texto es muy largo (maximo 255 caracteres)" });
         }
 
-        // El autor sale del token, nunca del body
         await Publicaciones.create({
             content: content.trim(),
             multimedia: multimedia || null,
@@ -115,7 +113,6 @@ const editarPublicacion = async (req, res) => {
         if (!post) {
             return res.status(404).json({ message: "La publicacion no existe" });
         }
-        // Solo el dueño puede editar
         if (post.userId !== req.usuario.id) {
             return res.status(403).json({ message: "Solo podes editar tus propias publicaciones" });
         }
@@ -250,7 +247,6 @@ const eliminarComentario = async (req, res) => {
     }
 }
 
-// A cada publicacion le agrega: cantidad de likes, si yo di like y cantidad de comentarios
 const agregarDatos = async (posts, userId) => {
     const lista = [];
     for (const p of posts) {

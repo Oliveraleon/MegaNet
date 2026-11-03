@@ -4,7 +4,6 @@ import { useEffect, useState } from "react"
 import { getUsuario } from "../api/auth"
 import axios from "axios"
 
-// Los archivos subidos se ven desde esta dirección del backend
 const ARCHIVOS = "http://localhost:3000/imagenes/"
 
 function VentanaMensajes({ url, titulo, subtitulo, icono, miembros = [], acciones }) {
@@ -37,7 +36,6 @@ function VentanaMensajes({ url, titulo, subtitulo, icono, miembros = [], accione
         e.preventDefault()
         if (texto.trim() === "" && !archivo) return
         try {
-            // Se manda como FormData porque puede llevar un archivo
             const formulario = new FormData()
             formulario.append("content", texto)
             if (archivo) formulario.append("archivo", archivo)
@@ -64,7 +62,6 @@ function VentanaMensajes({ url, titulo, subtitulo, icono, miembros = [], accione
         document.getElementById("texto-mensaje").focus()
     }
 
-    // Muestra el archivo del mensaje según su extensión: audio, video o imagen
     const mostrarArchivo = (nombre) => {
         const src = ARCHIVOS + nombre
         const extension = nombre.split(".").pop().toLowerCase()

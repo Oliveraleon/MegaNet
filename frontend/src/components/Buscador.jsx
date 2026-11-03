@@ -44,8 +44,6 @@ function Buscar(){
     return(
         <div className="buscador-container">
             <h2>Buscador</h2>
-            
-            {/* Contenedor redondeado para la barra de búsqueda */}
             <div className="search-bar">
                 <img src="/logoLupa.png" alt="Lupa" className="search-icon" />
                 <input

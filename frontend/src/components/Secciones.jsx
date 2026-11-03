@@ -8,7 +8,6 @@ const secciones = [
     ["/servidores", "🖥️ Servidores"],
 ]
 
-// Menú de arriba para pasar entre Publicaciones, Chats y Servidores
 function Secciones() {
     const ruta = useLocation().pathname
 

@@ -92,7 +92,6 @@ const getFeed = async (req, res) => {
             }
         ];
 
-        // Feed para invitados: publicaciones públicas
         if (!req.usuario) {
             const posts = await Publicaciones.findAll({
                 where: { privacy: "public" },
@@ -106,7 +105,6 @@ const getFeed = async (req, res) => {
             });
         }
 
-        // Feed para usuarios registrados: publicaciones de las cuentas seguidas
         const seguidos = await obtenerSeguidos(req.usuario.id);
 
         const posts = await Publicaciones.findAll({
@@ -365,7 +363,7 @@ const reiniciarContraseña = async (req,res)=>{
         return res.status(400).json({ message: "El enlace es inválido o ha expirado" });
     }
 }
-// ---------- Ver a otro usuario, amigos y solicitudes de amistad ----------
+
 
 const verPerfil = async (req, res) => {
     try {
@@ -377,13 +375,12 @@ const verPerfil = async (req, res) => {
             return res.status(404).json({ message: "El usuario no existe" });
         }
 
-        // Relacion de seguimiento
+
         const misSeguidos = await obtenerSeguidos(req.usuario.id);
         const misSeguidores = await obtenerSeguidoresIds(req.usuario.id);
         const susSeguidos = await obtenerSeguidos(otroId);
         const susSeguidores = await obtenerSeguidoresIds(otroId);
 
-        // Relacion de amistad: ninguna, enviada, recibida o amigos
         let amistad = "ninguna";
         const relacion = await buscarAmistad(req.usuario.id, otroId);
         if (relacion) {
@@ -396,7 +393,6 @@ const verPerfil = async (req, res) => {
             }
         }
 
-        // Los amigos tambien ven las publicaciones con privacidad "friends"
         const privacidad = ["public"];
         if (amistad === "amigos") {
             privacidad.push("friends");
@@ -454,7 +450,6 @@ const aceptarSolicitud = async (req, res) => {
     try {
         const otroId = Number(req.params.id);
 
-        // Solo puede aceptar quien la recibio
         const solicitud = await Amistades.findOne({
             where: { senderId: otroId, receiverId: req.usuario.id, status: "pendiente" },
         });
@@ -470,7 +465,6 @@ const aceptarSolicitud = async (req, res) => {
     }
 };
 
-// Sirve para rechazar una solicitud, cancelar la que envie o eliminar a un amigo
 const eliminarAmistad = async (req, res) => {
     try {
         const otroId = Number(req.params.id);
@@ -499,7 +493,6 @@ const getAmigos = async (req, res) => {
     }
 };
 
-// Solicitudes que me enviaron y todavia no acepte
 const getSolicitudes = async (req, res) => {
     try {
         const solicitudes = await Amistades.findAll({

@@ -8,11 +8,9 @@ function ComentariosPage() {
     const [comentarios, setComentarios] = useState([]);
     const [texto, setTexto] = useState("");
     const [loading, setLoading] = useState(true);
-    
-    // Estado para saber cuál menú de tres puntos está abierto
+
     const [menuAbiertoId, setMenuAbiertoId] = useState(null);
-    
-    // Estado para controlar la ventana de confirmación (modal)
+
     const [comentarioAEliminar, setComentarioAEliminar] = useState(null);
 
     const usuarioLogueado = JSON.parse(localStorage.getItem("user"));
@@ -45,10 +43,9 @@ function ComentariosPage() {
         }
     };
 
-    // Funciones para manejar la eliminación con el modal personalizado
     const iniciarEliminacion = (comentarioId) => {
-        setComentarioAEliminar(comentarioId); // Abre el modal de confirmación
-        setMenuAbiertoId(null); // Cierra el menú de puntos
+        setComentarioAEliminar(comentarioId); 
+        setMenuAbiertoId(null);
     };
 
     const ejecutarEliminacion = async () => {
@@ -56,12 +53,11 @@ function ComentariosPage() {
 
         try {
             await eliminarComentario(id, comentarioAEliminar);
-            // Filtramos el estado para que desaparezca al instante en tiempo real
             setComentarios(comentarios.filter(c => c.id !== comentarioAEliminar));
         } catch (error) {
             console.error("Error al eliminar comentario:", error);
         } finally {
-            setComentarioAEliminar(null); // Cierra el modal pase lo que pase
+            setComentarioAEliminar(null);
         }
     };
 
@@ -81,13 +77,10 @@ function ComentariosPage() {
                     <p>Cargando comentarios...</p>
                 ) : comentarios.length > 0 ? (
                     comentarios.map((c) => {
-                        // Verificamos si el comentario pertenece al usuario logueado
                         const esMio = usuarioLogueado && (c.userId === usuarioLogueado.id || c.autor?.id === usuarioLogueado.id);
 
                         return (
                             <div key={c.id} style={{ background: "#f8f9fa", padding: "12px", borderRadius: "8px", border: "1px solid #eee", display: "flex", gap: "12px", alignItems: "flex-start", position: "relative" }}>
-                                
-                                {/* 🟢 La foto de perfil AHORA APARECE PARA TODOS */}
                                 <Link to={`/profile/${c.autor?.id}`}>
                                     <img
                                         src={c.autor?.profilePicture ? `http://localhost:3000/${c.autor.profilePicture}` : "/defaultProfile.png"}
@@ -112,7 +105,6 @@ function ComentariosPage() {
                                     </p>
                                 </div>
 
-                                {/* 🟢 El menú de tres puntos y opción de eliminar SOLO aparecen si es tuyo */}
                                 {esMio && (
                                     <div style={{ position: "relative" }}>
                                         <button 
@@ -125,8 +117,6 @@ function ComentariosPage() {
                                                 style={{ width: "20px", height: "20px", objectFit: "contain" }} 
                                             />
                                         </button>
-
-                                        {/* Menú desplegable flotante */}
                                         {menuAbiertoId === c.id && (
                                             <div style={{
                                                 position: "absolute",
@@ -184,7 +174,6 @@ function ComentariosPage() {
                 </button>
             </form>
 
-            {/* --- VENTANA MODAL DE CONFIRMACIÓN PERSONALIZADA --- */}
             {comentarioAEliminar && (
                 <div style={{
                     position: "fixed",

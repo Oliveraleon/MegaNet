@@ -30,8 +30,6 @@ const getMensajesPrivados = async (req, res) => {
         if (!contactos.includes(otroId)) {
             return res.status(403).json({ message: "Solo podes chatear con amigos o con personas que se siguen mutuamente" });
         }
-
-        // Mensajes que yo le mande a el y que el me mando a mi
         const mensajes = await Mensajes.findAll({
             where: {
                 senderId: [req.usuario.id, otroId],
@@ -67,8 +65,6 @@ const enviarMensajePrivado = async (req, res) => {
     }
 };
 
-// ---------- Grupos ----------
-
 const getGrupos = async (req, res) => {
     try {
         const filas = await MiembrosGrupo.findAll({ where: { userId: req.usuario.id } });
@@ -90,7 +86,6 @@ const crearGrupo = async (req, res) => {
             return res.status(400).json({ message: "El grupo necesita un nombre" });
         }
 
-        // Solo se pueden agregar contactos (amigos o seguidores mutuos)
         const contactos = await obtenerContactos(req.usuario.id);
         const lista = miembros || [];
         for (let i = 0; i < lista.length; i++) {
@@ -234,7 +229,6 @@ const crearServidor = async (req, res) => {
         const servidor = await Servidores.create({ name: name.trim(), ownerId: req.usuario.id });
         await MiembrosServidor.create({ servidorId: servidor.id, userId: req.usuario.id });
 
-        // Todo servidor arranca con un canal de texto "general"
         await Canales.create({ servidorId: servidor.id, name: "general" });
 
         res.status(201).json({ message: "Servidor creado", servidor });
@@ -391,7 +385,6 @@ const salirDelServidor = async (req, res) => {
         if (!servidor) {
             return res.status(404).json({ message: "El servidor no existe" });
         }
-        // El creador no puede irse: si no lo quiere mas, lo elimina
         if (servidor.ownerId === req.usuario.id) {
             return res.status(400).json({ message: "Sos el creador: si no lo queres mas, eliminalo" });
         }
@@ -403,7 +396,6 @@ const salirDelServidor = async (req, res) => {
     }
 };
 
-// Borra el servidor con sus canales, mensajes y miembros (solo el creador)
 const eliminarServidor = async (req, res) => {
     try {
         const servidorId = Number(req.params.id);
