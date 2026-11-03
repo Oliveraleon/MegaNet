@@ -8,38 +8,52 @@ import VentanaMensajes from "./VentanaMensajes"
 import CanalVoz from "./CanalVoz"
 import ConfigAudio from "./ConfigAudio"
 
+const API = "http://localhost:3000/chat/"
+const IMAGENES = "http://localhost:3000/imagenes/"
+
 function Servidores() {
     const [servidores, setServidores] = useState([])
     const [contactos, setContactos] = useState([])
 
-    // Servidor abierto y canal elegido
     const [servidorId, setServidorId] = useState(null)
     const [datos, setDatos] = useState(null)
     const [canalId, setCanalId] = useState(null)
 
-    // Ventanas que se abren y formularios
     const [verCrear, setVerCrear] = useState(false)
-    const [verAdmin, setVerAdmin] = useState(false)
+    const [verOpciones, setVerOpciones] = useState(false)
     const [verConfig, setVerConfig] = useState(false)
+    const [verMiembros, setVerMiembros] = useState(true)
     const [nombreServidor, setNombreServidor] = useState("")
     const [nombreCanal, setNombreCanal] = useState("")
     const [tipoCanal, setTipoCanal] = useState("texto")
     const [invitado, setInvitado] = useState("")
+    const [nuevoNombre, setNuevoNombre] = useState("")
+    const [foto, setFoto] = useState(null)
 
     const token = localStorage.getItem("token")
     const config = { headers: { Authorization: "Bearer " + token } }
     const yo = getUsuario()
 
     const cargarLista = async () => {
-        const res1 = await axios.get("http://localhost:3000/chat/servidores", config)
-        const res2 = await axios.get("http://localhost:3000/chat/contactos", config)
+        const res1 = await axios.get(API + "servidores", config)
+        const res2 = await axios.get(API + "contactos", config)
         setServidores(res1.data.servidores)
         setContactos(res2.data.usuarios)
     }
 
+    const cerrarServidor = () => {
+        setServidorId(null)
+        setDatos(null)
+        setCanalId(null)
+    }
+
     const cargarServidor = async () => {
-        const res = await axios.get("http://localhost:3000/chat/servidores/" + servidorId, config)
-        setDatos(res.data)
+        try {
+            const res = await axios.get(API + "servidores/" + servidorId, config)
+            setDatos(res.data)
+        } catch {
+            cerrarServidor()
+        }
     }
 
     useEffect(() => {
@@ -48,8 +62,6 @@ function Servidores() {
         }
     }, [])
 
-    // Cuando se elige un servidor lo cargamos, y cada 3 segundos
-    // lo volvemos a pedir para ver quien entra o sale de los canales de voz
     useEffect(() => {
         if (servidorId === null) return
         cargarServidor()
@@ -58,15 +70,15 @@ function Servidores() {
     }, [servidorId])
 
     const abrirServidor = (id) => {
-        setDatos(null)
-        setCanalId(null)
+        if (id === servidorId) return
+        cerrarServidor()
         setServidorId(id)
     }
 
     const crearServidor = async (e) => {
         e.preventDefault()
         try {
-            await axios.post("http://localhost:3000/chat/servidores", { name: nombreServidor }, config)
+            await axios.post(API + "servidores", { name: nombreServidor }, config)
             setNombreServidor("")
             setVerCrear(false)
             cargarLista()
@@ -78,7 +90,7 @@ function Servidores() {
     const crearCanal = async (e) => {
         e.preventDefault()
         try {
-            await axios.post("http://localhost:3000/chat/servidores/" + servidorId + "/canales", { name: nombreCanal, type: tipoCanal }, config)
+            await axios.post(API + "servidores/" + servidorId + "/canales", { name: nombreCanal, type: tipoCanal }, config)
             setNombreCanal("")
             cargarServidor()
         } catch (err) {
@@ -89,7 +101,7 @@ function Servidores() {
     const invitar = async () => {
         if (invitado === "") return
         try {
-            await axios.post("http://localhost:3000/chat/servidores/" + servidorId + "/miembros", { userId: Number(invitado) }, config)
+            await axios.post(API + "servidores/" + servidorId + "/miembros", { userId: Number(invitado) }, config)
             setInvitado("")
             cargarServidor()
         } catch (err) {
@@ -97,25 +109,55 @@ function Servidores() {
         }
     }
 
-    if (!estaLogueado()) return <Navigate to="/login" replace />
-
-    // Separamos los canales por tipo y buscamos el canal elegido
-    const canalesTexto = []
-    const canalesVoz = []
-    let canal = null
-    if (datos) {
-        for (const c of datos.canales) {
-            if (c.type === "texto") canalesTexto.push(c)
-            if (c.type === "voz") canalesVoz.push(c)
-            if (c.id === canalId) canal = c
+    const guardarServidor = async (e) => {
+        e.preventDefault()
+        try {
+            const formulario = new FormData()
+            formulario.append("name", nuevoNombre)
+            if (foto) formulario.append("imagen", foto)
+            await axios.put(API + "servidores/" + servidorId, formulario, config)
+            setFoto(null)
+            cargarServidor()
+            cargarLista()
+            alert("Servidor actualizado")
+        } catch (err) {
+            alert(err.response?.data?.message || "No se pudo guardar")
         }
     }
 
+    const salirOEliminar = async (eliminar) => {
+        if (!confirm(eliminar ? "¿Eliminar " + datos.servidor.name + " con todos sus canales y mensajes?" : "¿Salir de " + datos.servidor.name + "?")) return
+        try {
+            if (eliminar) {
+                await axios.delete(API + "servidores/" + servidorId, config)
+            } else {
+                await axios.delete(API + "servidores/" + servidorId + "/miembros", config)
+            }
+            setVerOpciones(false)
+            cerrarServidor()
+            cargarLista()
+        } catch (err) {
+            alert(err.response?.data?.message || "No se pudo completar")
+        }
+    }
+
+    if (!estaLogueado()) return <Navigate to="/login" replace />
+
+    const canal = datos?.canales.find((c) => c.id === canalId)
     const soyDueno = datos && datos.servidor.ownerId === yo?.id
+
+    const botonMiembros = datos && (
+        <button
+            className={verMiembros ? "boton-icono activo" : "boton-icono"}
+            onClick={() => setVerMiembros(!verMiembros)}
+            title={verMiembros ? "Ocultar miembros" : "Ver miembros"}
+        >
+            👥 <span className="contador">{datos.miembros.length}</span>
+        </button>
+    )
 
     return (
         <div className="pagina-chat">
-            {/* ---------- Columna 1: mis servidores ---------- */}
             <nav className="rail">
                 {servidores.map((s) => (
                     <button
@@ -124,15 +166,12 @@ function Servidores() {
                         onClick={() => abrirServidor(s.id)}
                         title={s.name}
                     >
-                        {s.name[0].toUpperCase()}
+                        {s.imagen ? <img src={IMAGENES + s.imagen} alt={s.name} /> : s.name[0].toUpperCase()}
                     </button>
                 ))}
-                <button className="rail-servidor rail-crear" onClick={() => setVerCrear(true)} title="Crear servidor">
-                    +
-                </button>
+                <button className="rail-servidor rail-crear" onClick={() => setVerCrear(true)} title="Crear servidor">+</button>
             </nav>
 
-            {/* ---------- Columna 2: canales del servidor ---------- */}
             <aside className="panel-canales">
                 {!datos && (
                     <div className="vacio">
@@ -145,90 +184,95 @@ function Servidores() {
                     <>
                         <div className="panel-titulo">
                             <h2>{datos.servidor.name}</h2>
-                            {soyDueno && (
-                                <button className="boton-icono" onClick={() => setVerAdmin(true)} title="Administrar servidor">
-                                    ⚙️
-                                </button>
-                            )}
+                            <button
+                                className="boton-icono"
+                                onClick={() => { setNuevoNombre(datos.servidor.name); setFoto(null); setVerOpciones(true) }}
+                                title="Opciones del servidor"
+                            >
+                                ⚙️
+                            </button>
                         </div>
 
                         <div className="lista">
-                            <p className="seccion">Canales de texto</p>
-                            {canalesTexto.map((c) => (
-                                <button
-                                    key={c.id}
-                                    className={canalId === c.id ? "canal activo" : "canal"}
-                                    onClick={() => setCanalId(c.id)}
-                                >
-                                    <span className="canal-icono">#</span> {c.name}
-                                </button>
-                            ))}
-
-                            <p className="seccion">Canales de voz</p>
-                            {canalesVoz.map((c) => (
-                                <div key={c.id}>
-                                    <button
-                                        className={canalId === c.id ? "canal activo" : "canal"}
-                                        onClick={() => setCanalId(c.id)}
-                                    >
-                                        <span className="canal-icono">🔊</span> {c.name}
-                                    </button>
-                                    {c.conectados.map((u) => (
-                                        <div key={u.id} className="conectado">
-                                            <span className="punto-verde"></span> @{u.username}
+                            {["texto", "voz"].map((tipo) => (
+                                <div key={tipo}>
+                                    <p className="seccion">{tipo === "texto" ? "Canales de texto" : "Canales de voz"}</p>
+                                    {datos.canales.filter((c) => c.type === tipo).map((c) => (
+                                        <div key={c.id}>
+                                            <button className={canalId === c.id ? "canal activo" : "canal"} onClick={() => setCanalId(c.id)}>
+                                                <span className="canal-icono">{tipo === "texto" ? "#" : "🔊"}</span> {c.name}
+                                            </button>
+                                            {c.conectados.map((u) => (
+                                                <div key={u.id} className="conectado">
+                                                    <span className="punto-verde"></span> @{u.username}
+                                                </div>
+                                            ))}
                                         </div>
                                     ))}
-                                </div>
-                            ))}
-
-                            <p className="seccion">Miembros · {datos.miembros.length}</p>
-                            {datos.miembros.map((m) => (
-                                <div key={m.id} className="miembro">
-                                    <div className="avatar-mini">{m.username[0].toUpperCase()}</div>
-                                    @{m.username}
-                                    {m.id === datos.servidor.ownerId && <span title="Creador">👑</span>}
                                 </div>
                             ))}
                         </div>
                     </>
                 )}
 
-                {/* Barra de abajo: mi usuario y configuración de audio */}
                 <div className="barra-usuario">
                     <div className="avatar-mini">{yo?.username ? yo.username[0].toUpperCase() : "?"}</div>
                     <strong>@{yo?.username}</strong>
-                    <button className="boton-icono" onClick={() => setVerConfig(true)} title="Configuración de audio">
-                        🎧
-                    </button>
+                    <button className="boton-icono" onClick={() => setVerConfig(true)} title="Configuración de audio">🎧</button>
                 </div>
             </aside>
 
-            {/* ---------- Columna 3: el canal elegido ---------- */}
             <section className="panel-principal">
                 {!canal && (
-                    <div className="vacio grande">
-                        <span className="vacio-icono">#</span>
-                        <h3>{datos ? "Elegí un canal" : "Servidores"}</h3>
-                        <p>Los canales de texto son para escribir y los de voz para hablar con tu micrófono.</p>
-                    </div>
+                    <>
+                        {datos && <div className="barra-arriba">{botonMiembros}</div>}
+                        <div className="vacio grande">
+                            <span className="vacio-icono">#</span>
+                            <h3>{datos ? "Elegí un canal" : "Servidores"}</h3>
+                            <p>Los canales de texto son para escribir y los de voz para hablar con tu micrófono.</p>
+                        </div>
+                    </>
                 )}
 
                 {canal && canal.type === "texto" && (
                     <VentanaMensajes
                         key={canal.id}
-                        url={"http://localhost:3000/chat/canales/" + canal.id + "/mensajes"}
+                        url={API + "canales/" + canal.id + "/mensajes"}
                         titulo={canal.name}
                         subtitulo={"Canal de texto de " + datos.servidor.name}
                         icono="#"
+                        miembros={datos.miembros}
+                        acciones={botonMiembros}
                     />
                 )}
 
                 {canal && canal.type === "voz" && (
-                    <CanalVoz canal={canal} yo={yo} onCambio={cargarServidor} />
+                    <CanalVoz canal={canal} yo={yo} onCambio={cargarServidor} acciones={botonMiembros} />
                 )}
             </section>
 
-            {/* ---------- Ventana: crear servidor ---------- */}
+            {datos && verMiembros && (
+                <aside className="panel-miembros">
+                    <div className="panel-titulo">
+                        <h2>Miembros · {datos.miembros.length}</h2>
+                        <button className="boton-icono" onClick={() => setVerMiembros(false)} title="Cerrar">✕</button>
+                    </div>
+                    <div className="lista">
+                        {datos.miembros.map((m) => (
+                            <div key={m.id} className="miembro">
+                                <div className="avatar-mini">{m.username[0].toUpperCase()}</div>
+                                <span className="miembro-nombre">
+                                    @{m.username}
+                                    {m.id === yo?.id && <span className="texto-suave"> (vos)</span>}
+                                </span>
+                                {m.id === datos.servidor.ownerId && <span title="Creador">👑</span>}
+                                {datos.canales.some((c) => c.conectados.some((u) => u.id === m.id)) && <span title="En un canal de voz">🔊</span>}
+                            </div>
+                        ))}
+                    </div>
+                </aside>
+            )}
+
             {verCrear && (
                 <div className="modal-fondo" onClick={() => setVerCrear(false)}>
                     <form className="modal-caja" onClick={(e) => e.stopPropagation()} onSubmit={crearServidor}>
@@ -248,44 +292,62 @@ function Servidores() {
                 </div>
             )}
 
-            {/* ---------- Ventana: administrar servidor (solo el creador) ---------- */}
-            {verAdmin && soyDueno && (
-                <div className="modal-fondo" onClick={() => setVerAdmin(false)}>
-                    <div className="modal-caja" onClick={(e) => e.stopPropagation()}>
+            {verOpciones && datos && (
+                <div className="modal-fondo" onClick={() => setVerOpciones(false)}>
+                    <div className="modal-caja modal-ancha" onClick={(e) => e.stopPropagation()}>
                         <div className="modal-titulo">
-                            <h3>⚙️ Administrar {datos.servidor.name}</h3>
-                            <button className="boton-icono" onClick={() => setVerAdmin(false)}>✕</button>
+                            <h3>⚙️ {datos.servidor.name}</h3>
+                            <button className="boton-icono" onClick={() => setVerOpciones(false)}>✕</button>
                         </div>
 
-                        <form className="campo" onSubmit={crearCanal}>
-                            <span>Nuevo canal</span>
-                            <input
-                                type="text"
-                                placeholder="Nombre del canal"
-                                value={nombreCanal}
-                                onChange={(e) => setNombreCanal(e.target.value)}
-                            />
-                            <div className="segmentado">
-                                <button type="button" className={tipoCanal === "texto" ? "activo" : ""} onClick={() => setTipoCanal("texto")}>
-                                    # Texto
-                                </button>
-                                <button type="button" className={tipoCanal === "voz" ? "activo" : ""} onClick={() => setTipoCanal("voz")}>
-                                    🔊 Voz
-                                </button>
-                            </div>
-                            <button type="submit" className="boton">Crear canal</button>
-                        </form>
+                        {soyDueno && (
+                            <>
+                                <form className="campo" onSubmit={guardarServidor}>
+                                    <span>Nombre y foto</span>
+                                    <div className="servidor-editar">
+                                        <div className="servidor-foto">
+                                            {foto ? (
+                                                <img src={URL.createObjectURL(foto)} alt="Nueva foto" />
+                                            ) : datos.servidor.imagen ? (
+                                                <img src={IMAGENES + datos.servidor.imagen} alt="Foto actual" />
+                                            ) : (
+                                                datos.servidor.name[0].toUpperCase()
+                                            )}
+                                        </div>
+                                        <div className="servidor-campos">
+                                            <input type="text" value={nuevoNombre} onChange={(e) => setNuevoNombre(e.target.value)} placeholder="Nombre del servidor" />
+                                            <input type="file" accept="image/*" onChange={(e) => setFoto(e.target.files[0])} />
+                                        </div>
+                                    </div>
+                                    <button type="submit" className="boton">Guardar cambios</button>
+                                </form>
 
-                        <div className="campo">
-                            <span>Invitar a un contacto</span>
-                            <select value={invitado} onChange={(e) => setInvitado(e.target.value)}>
-                                <option value="">Elegí un contacto...</option>
-                                {contactos.map((u) => (
-                                    <option key={u.id} value={u.id}>@{u.username}</option>
-                                ))}
-                            </select>
-                            <button className="boton boton-secundario" onClick={invitar}>Invitar</button>
-                        </div>
+                                <form className="campo" onSubmit={crearCanal}>
+                                    <span>Nuevo canal</span>
+                                    <input type="text" placeholder="Nombre del canal" value={nombreCanal} onChange={(e) => setNombreCanal(e.target.value)} />
+                                    <div className="segmentado">
+                                        <button type="button" className={tipoCanal === "texto" ? "activo" : ""} onClick={() => setTipoCanal("texto")}># Texto</button>
+                                        <button type="button" className={tipoCanal === "voz" ? "activo" : ""} onClick={() => setTipoCanal("voz")}>🔊 Voz</button>
+                                    </div>
+                                    <button type="submit" className="boton">Crear canal</button>
+                                </form>
+
+                                <div className="campo">
+                                    <span>Invitar a un contacto</span>
+                                    <select value={invitado} onChange={(e) => setInvitado(e.target.value)}>
+                                        <option value="">Elegí un contacto...</option>
+                                        {contactos.map((u) => (
+                                            <option key={u.id} value={u.id}>@{u.username}</option>
+                                        ))}
+                                    </select>
+                                    <button className="boton boton-secundario" onClick={invitar}>Invitar</button>
+                                </div>
+                            </>
+                        )}
+
+                        <button className="boton boton-rojo" onClick={() => salirOEliminar(soyDueno)}>
+                            {soyDueno ? "🗑️ Eliminar servidor" : "🚪 Salir del servidor"}
+                        </button>
                     </div>
                 </div>
             )}

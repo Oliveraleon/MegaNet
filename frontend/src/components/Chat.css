@@ -823,3 +823,221 @@
         min-height: 480px;
     }
 }
+
+/* =====================================================
+   Agregado: menciones, miembros y foto del servidor
+   ===================================================== */
+
+/* ---------- Cabecera con botones a la derecha ---------- */
+
+.cabecera-texto {
+    flex: 1;
+    min-width: 0;
+}
+
+.cabecera-acciones {
+    display: flex;
+    gap: 0.3rem;
+    align-items: center;
+}
+
+.boton-icono.activo {
+    background: var(--rosa-claro);
+}
+
+.contador {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--suave);
+}
+
+.barra-arriba {
+    display: flex;
+    justify-content: flex-end;
+    padding: 0.6rem 1rem;
+    border-bottom: 1px solid var(--borde);
+}
+
+/* ---------- Menciones ---------- */
+
+.mencion {
+    padding: 0 0.2rem;
+    border-radius: 5px;
+    background: #e7ecff;
+    color: #3b5bdb;
+    font-weight: 600;
+}
+
+.mencion.mia {
+    background: #fff1c2;
+    color: #8a5a00;
+}
+
+/* Dentro de mis burbujas (rosas) la mención se ve en blanco */
+.burbuja.mia .mencion {
+    background: rgba(255, 255, 255, 0.25);
+    color: #ffffff;
+}
+
+/* Mensaje de otro que me menciona */
+.burbuja.mencionado {
+    background: #fff8e1;
+    border-left: 3px solid #f5b300;
+}
+
+/* Lista para elegir a quién mencionar (aparece arriba de la caja de texto) */
+.escribir {
+    position: relative;
+}
+
+.sugerencias {
+    position: absolute;
+    left: 1.2rem;
+    bottom: calc(100% + 4px);
+    z-index: 20;
+    width: 260px;
+    max-height: 220px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    padding: 0.4rem;
+    background: var(--tarjeta);
+    border: 1px solid var(--borde);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.sugerencias .texto-suave {
+    padding: 0.2rem 0.5rem;
+    font-size: 0.75rem;
+}
+
+.sugerencias button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.45rem 0.5rem;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--texto);
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+}
+
+.sugerencias button:hover {
+    background: var(--fondo);
+}
+
+/* ---------- Barra de miembros del servidor (derecha) ---------- */
+
+.panel-miembros {
+    width: 220px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid var(--borde);
+    background: #fafbfd;
+}
+
+.panel-miembros .panel-titulo h2 {
+    font-size: 1rem;
+}
+
+.miembro-nombre {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ---------- Foto del servidor ---------- */
+
+.rail-servidor {
+    padding: 0;
+    overflow: hidden;
+}
+
+.rail-servidor img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.modal-caja.modal-ancha {
+    max-width: 460px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.servidor-editar {
+    display: flex;
+    gap: 0.8rem;
+    align-items: center;
+}
+
+.servidor-foto {
+    width: 64px;
+    height: 64px;
+    flex-shrink: 0;
+    border-radius: 18px;
+    overflow: hidden;
+    background: var(--degradado);
+    color: #ffffff;
+    font-size: 1.6rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.servidor-foto img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.servidor-campos {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.segmentado.tres button {
+    font-size: 0.85rem;
+}
+
+/* Barra de miembros en pantallas chicas */
+@media (max-width: 800px) {
+    .panel-miembros {
+        width: 100%;
+        border-left: none;
+        border-top: 1px solid var(--borde);
+    }
+}
+
+/* Botón de elegir foto (el input de archivo) */
+.servidor-campos input[type="file"] {
+    font-size: 0.8rem;
+    color: #6b7280;
+    max-width: 100%;
+}
+
+.servidor-campos input[type="file"]::file-selector-button {
+    margin-right: 0.6rem;
+    padding: 0.45rem 0.9rem;
+    border: none;
+    border-radius: 8px;
+    background: #fdecf1;
+    color: #eb3b6f;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.servidor-campos input[type="file"]::file-selector-button:hover {
+    background: #fbd5e1;
+}

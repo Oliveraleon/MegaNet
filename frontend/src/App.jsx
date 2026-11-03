@@ -36,17 +36,13 @@ function App() {
         navigate("/login");
     }; 
 
+    const esSeccion = ["/home", "/chat", "/servidores"].some((ruta) => location.pathname.startsWith(ruta));
+
     const esPaginaAuth =
         location.pathname === "/login" ||
         location.pathname === "/register" ||
         location.pathname === "/recuperarCuenta" ||
         location.pathname === "/reiniciarContraseña";
-
-    // Paginas que muestran las pestañas Publicaciones / Chats / Servidores
-    const esSeccion =
-        location.pathname === "/home" ||
-        location.pathname.startsWith("/chat") ||
-        location.pathname === "/servidores";
 
     return (
         <>
@@ -129,8 +125,8 @@ function App() {
                 <Route path="/register" element={<Register />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/home" element={<Home />} />
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/profile/:id" element={<Profile />} />
+                <Route path="/profile" element={<PerfilUsuario  />} />
+                <Route path="/profile/:id" element={<PerfilUsuario />} />
                 <Route path="/profileEdit" element={<ProfileEdit />} />
                 <Route path="/conexiones" element={<Conexiones />} />
                 <Route path="/conexiones/:id" element={<Conexiones />} />

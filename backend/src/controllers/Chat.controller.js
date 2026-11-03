@@ -122,7 +122,7 @@ const getGrupo = async (req, res) => {
         for (let i = 0; i < filas.length; i++) {
             miembros.push(filas[i].usuario);
         }
-        res.status(200).json({ grupo, miembros });
+        res.status(200).json({ grupo, miembros, miConfig });
     } catch (error) {
         res.status(500).json({ message: "Error al obtener el grupo", error: error.message });
     }
@@ -207,7 +207,6 @@ const enviarMensajeGrupo = async (req, res) => {
     }
 };
 
-// ---------- Servidores y canales ----------
 
 const getServidores = async (req, res) => {
     try {
@@ -246,7 +245,8 @@ const crearServidor = async (req, res) => {
 const getServidor = async (req, res) => {
     try {
         const servidorId = Number(req.params.id);
-        if (!(await buscarMiembroServidor(servidorId, req.usuario.id))) {
+        const yo = await buscarMiembroServidor(servidorId, req.usuario.id);
+        if (!yo) {
             return res.status(403).json({ message: "No sos miembro de este servidor" });
         }
 
@@ -275,7 +275,6 @@ const getServidor = async (req, res) => {
                 conectados: conectados,
             });
         }
-
         res.status(200).json({ servidor, canales: lista, miembros });
     } catch (error) {
         res.status(500).json({ message: "Error al obtener el servidor", error: error.message });
@@ -478,6 +477,76 @@ const recibirSenales = async (req, res) => {
     }
 };
 
+const editarServidor = async (req, res) => {
+    try {
+        const servidor = await Servidores.findByPk(Number(req.params.id));
+        if (!servidor) {
+            return res.status(404).json({ message: "El servidor no existe" });
+        }
+        if (servidor.ownerId !== req.usuario.id) {
+            return res.status(403).json({ message: "Solo el creador puede editar el servidor" });
+        }
+        if (!textoValido(req.body.name)) {
+            return res.status(400).json({ message: "El servidor necesita un nombre" });
+        }
+
+        servidor.name = req.body.name.trim();
+        if (req.file) {
+            servidor.imagen = req.file.filename;
+        }
+        await servidor.save();
+        res.status(200).json({ message: "Servidor actualizado", servidor });
+    } catch (error) {
+        res.status(500).json({ message: "Error al editar el servidor", error: error.message });
+    }
+};
+
+const salirDelServidor = async (req, res) => {
+    try {
+        const servidorId = Number(req.params.id);
+        const servidor = await Servidores.findByPk(servidorId);
+        if (!servidor) {
+            return res.status(404).json({ message: "El servidor no existe" });
+        }
+        // El creador no puede irse: si no lo quiere mas, lo elimina
+        if (servidor.ownerId === req.usuario.id) {
+            return res.status(400).json({ message: "Sos el creador: si no lo queres mas, eliminalo" });
+        }
+
+        await MiembrosServidor.destroy({ where: { servidorId: servidorId, userId: req.usuario.id } });
+        res.status(200).json({ message: "Saliste del servidor" });
+    } catch (error) {
+        res.status(500).json({ message: "Error al salir del servidor", error: error.message });
+    }
+};
+
+// Borra el servidor con sus canales, mensajes y miembros (solo el creador)
+const eliminarServidor = async (req, res) => {
+    try {
+        const servidorId = Number(req.params.id);
+        const servidor = await Servidores.findByPk(servidorId);
+        if (!servidor) {
+            return res.status(404).json({ message: "El servidor no existe" });
+        }
+        if (servidor.ownerId !== req.usuario.id) {
+            return res.status(403).json({ message: "Solo el creador puede eliminar el servidor" });
+        }
+
+        const canales = await Canales.findAll({ where: { servidorId: servidorId } });
+        const ids = [];
+        for (let i = 0; i < canales.length; i++) {
+            ids.push(canales[i].id);
+        }
+        await Mensajes.destroy({ where: { canalId: ids } });
+        await Canales.destroy({ where: { servidorId: servidorId } });
+        await MiembrosServidor.destroy({ where: { servidorId: servidorId } });
+        await servidor.destroy();
+        res.status(200).json({ message: "Servidor eliminado" });
+    } catch (error) {
+        res.status(500).json({ message: "Error al eliminar el servidor", error: error.message });
+    }
+};
+
 module.exports = {
     getContactos,
     getMensajesPrivados,
@@ -499,5 +568,8 @@ module.exports = {
     entrarVoz,
     salirVoz,
     enviarSenal,
-    recibirSenales
+    recibirSenales,
+    editarServidor,
+    salirDelServidor,
+    eliminarServidor
 };

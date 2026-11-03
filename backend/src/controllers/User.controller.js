@@ -117,7 +117,7 @@ const getFeed = async (req, res) => {
         const lista = await agregarDatos(posts, req.usuario.id);
         res.status(200).json({ tipo: "registrado", posts: agregarRelacion(lista, seguidos, seguidores, amigos) });
     } catch (error) {
-        res.status(500).json({ message: "Error al obtener el feed"});
+        res.status(500).json({ message: "Error al obtener el feed", error: error.message });
     }
 };
 

@@ -4,22 +4,19 @@ import { useEffect, useState } from "react"
 import { entrarALaLlamada, salirDeLaLlamada, actualizarParticipantes, silenciar } from "../api/voz"
 import ConfigAudio from "./ConfigAudio"
 
-// Pantalla de un canal de voz: quién está conectado y los botones de la llamada
-function CanalVoz({ canal, yo, onCambio }) {
+function CanalVoz({ canal, yo, onCambio, acciones }) {
     const [enLlamada, setEnLlamada] = useState(false)
     const [silenciado, setSilenciado] = useState(false)
     const [conectando, setConectando] = useState(false)
     const [verConfig, setVerConfig] = useState(false)
     const [error, setError] = useState("")
 
-    // Cada vez que cambia la lista de conectados, conectamos o cortamos audios
     useEffect(() => {
         if (enLlamada) {
             actualizarParticipantes(canal.conectados, yo.id)
         }
     }, [canal, enLlamada])
 
-    // Si cambiamos de canal o salimos de la pantalla, salimos de la llamada
     useEffect(() => {
         return () => {
             salirDeLaLlamada()
@@ -51,12 +48,13 @@ function CanalVoz({ canal, yo, onCambio }) {
         <div className="voz">
             <div className="ventana-cabecera">
                 <div className="avatar-chat icono-voz">🔊</div>
-                <div>
+                <div className="cabecera-texto">
                     <h3>{canal.name}</h3>
                     <span className="texto-suave">
                         {enLlamada ? "🟢 Conectado al canal de voz" : "Canal de voz · " + canal.conectados.length + " conectados"}
                     </span>
                 </div>
+                {acciones && <div className="cabecera-acciones">{acciones}</div>}
             </div>
 
             <div className="voz-participantes">
@@ -71,9 +69,7 @@ function CanalVoz({ canal, yo, onCambio }) {
                     <div key={u.id} className={u.id === yo.id && enLlamada ? "participante yo" : "participante"}>
                         <div className="participante-avatar">{u.username[0].toUpperCase()}</div>
                         <strong>@{u.username}</strong>
-                        {u.id === yo.id && (
-                            <span className="texto-suave">{silenciado ? "🔇 Silenciado" : "Vos"}</span>
-                        )}
+                        {u.id === yo.id && <span className="texto-suave">{silenciado ? "🔇 Silenciado" : "Vos"}</span>}
                     </div>
                 ))}
             </div>
@@ -100,9 +96,7 @@ function CanalVoz({ canal, yo, onCambio }) {
                     </>
                 )}
 
-                <button className="boton-redondo" onClick={() => setVerConfig(true)} title="Configuración de audio">
-                    ⚙️
-                </button>
+                <button className="boton-redondo" onClick={() => setVerConfig(true)} title="Configuración de audio">⚙️</button>
             </div>
 
             {verConfig && <ConfigAudio onCerrar={() => setVerConfig(false)} />}

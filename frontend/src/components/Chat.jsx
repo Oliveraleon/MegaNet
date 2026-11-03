@@ -6,6 +6,8 @@ import { estaLogueado, getUsuario } from "../api/auth"
 import axios from "axios"
 import VentanaMensajes from "./VentanaMensajes"
 
+const API = "http://localhost:3000/chat/"
+
 function Chat() {
     const { id } = useParams()
     const [tab, setTab] = useState("privados")
@@ -33,17 +35,10 @@ function Chat() {
         setContactos(res1.data.usuarios)
         setGrupos(res2.data.grupos)
 
-        // Si entramos desde el perfil (/chat/:id) abrimos el chat con esa persona
-        if (id) {
-            const lista = res1.data.usuarios
-            let encontrado = null
-            for (let i = 0; i < lista.length; i++) {
-                if (lista[i].id === Number(id)) {
-                    encontrado = lista[i]
-                }
-            }
-            if (encontrado) {
-                setAbierto({ tipo: "privado", id: encontrado.id, nombre: "@" + encontrado.username })
+            if (id) {
+            const persona = res1.data.usuarios.find((u) => u.id === Number(id))
+            if (persona) {
+                setAbierto({ tipo: "privado", id: persona.id, nombre: "@" + persona.username })
             } else {
                 setError("Solo podés chatear con amigos o con personas que se siguen mutuamente")
             }
@@ -58,22 +53,16 @@ function Chat() {
 
     const abrirGrupo = async (grupo) => {
         setAbierto({ tipo: "grupo", id: grupo.id, nombre: grupo.name, ownerId: grupo.ownerId })
-        const res = await axios.get("http://localhost:3000/chat/grupos/" + grupo.id, config)
+        const res = await axios.get(API + "grupos/" + grupo.id, config)
         setMiembros(res.data.miembros)
     }
 
-    // Marca o desmarca un contacto para el grupo nuevo
     const marcar = (contactoId) => {
-        const nueva = []
-        for (let i = 0; i < seleccionados.length; i++) {
-            if (seleccionados[i] !== contactoId) {
-                nueva.push(seleccionados[i])
-            }
+        if (seleccionados.includes(contactoId)) {
+            setSeleccionados(seleccionados.filter((s) => s !== contactoId))
+        } else {
+            setSeleccionados([...seleccionados, contactoId])
         }
-        if (!seleccionados.includes(contactoId)) {
-            nueva.push(contactoId)
-        }
-        setSeleccionados(nueva)
     }
 
     const crearGrupo = async (e) => {
@@ -93,7 +82,7 @@ function Chat() {
     const agregarMiembro = async () => {
         if (nuevoMiembro === "") return
         try {
-            await axios.post("http://localhost:3000/chat/grupos/" + abierto.id + "/miembros", { userId: Number(nuevoMiembro) }, config)
+            await axios.post(API + "grupos/" + abierto.id + "/miembros", { userId: Number(nuevoMiembro) }, config)
             setNuevoMiembro("")
             abrirGrupo({ id: abierto.id, name: abierto.nombre, ownerId: abierto.ownerId })
         } catch (err) {
@@ -103,19 +92,23 @@ function Chat() {
 
     const salirDelGrupo = async () => {
         if (!confirm("¿Querés salir del grupo " + abierto.nombre + "?")) return
-        await axios.delete("http://localhost:3000/chat/grupos/" + abierto.id + "/miembros", config)
+        await axios.delete(API + "grupos/" + abierto.id + "/miembros", config)
         setAbierto(null)
         cargar()
     }
 
     if (!estaLogueado()) return <Navigate to="/login" replace />
 
+    const esGrupo = abierto?.tipo === "grupo"
     let url = ""
-    if (abierto && abierto.tipo === "privado") {
-        url = "http://localhost:3000/chat/privado/" + abierto.id
+    let mencionables = []
+    if (abierto && !esGrupo) {
+        url = API + "privado/" + abierto.id
+        mencionables = [{ id: yo?.id, username: yo?.username }, { id: abierto.id, username: abierto.nombre.slice(1) }]
     }
-    if (abierto && abierto.tipo === "grupo") {
-        url = "http://localhost:3000/chat/grupos/" + abierto.id + "/mensajes"
+    if (esGrupo) {
+        url = API + "grupos/" + abierto.id + "/mensajes"
+        mencionables = miembros
     }
 
     return (
@@ -132,12 +125,8 @@ function Chat() {
                 </div>
 
                 <div className="segmentado">
-                    <button className={tab === "privados" ? "activo" : ""} onClick={() => setTab("privados")}>
-                        👤 Privados
-                    </button>
-                    <button className={tab === "grupos" ? "activo" : ""} onClick={() => setTab("grupos")}>
-                        👥 Grupos
-                    </button>
+                    <button className={tab === "privados" ? "activo" : ""} onClick={() => setTab("privados")}>👤 Privados</button>
+                    <button className={tab === "grupos" ? "activo" : ""} onClick={() => setTab("grupos")}>👥 Grupos</button>
                 </div>
 
                 {error && <p className="aviso-error">{error}</p>}
@@ -145,9 +134,7 @@ function Chat() {
                 {tab === "privados" && (
                     <div className="lista">
                         {contactos.length === 0 && (
-                            <p className="texto-suave centrado">
-                                Agregá amigos o seguí a alguien que te siga para poder chatear.
-                            </p>
+                            <p className="texto-suave centrado">Agregá amigos o seguí a alguien que te siga para poder chatear.</p>
                         )}
                         {contactos.map((u) => (
                             <button
@@ -198,7 +185,7 @@ function Chat() {
                         {grupos.map((g) => (
                             <button
                                 key={g.id}
-                                className={abierto?.tipo === "grupo" && abierto.id === g.id ? "item activo" : "item"}
+                                className={esGrupo && abierto.id === g.id ? "item activo" : "item"}
                                 onClick={() => abrirGrupo(g)}
                             >
                                 <div className="avatar-chat grupo">{g.name[0].toUpperCase()}</div>
@@ -222,7 +209,7 @@ function Chat() {
                     </div>
                 )}
 
-                {abierto && abierto.tipo === "grupo" && (
+                {esGrupo && (
                     <div className="barra-grupo">
                         <div className="chips">
                             {miembros.map((m) => (
@@ -251,8 +238,9 @@ function Chat() {
                         key={url}
                         url={url}
                         titulo={abierto.nombre}
-                        subtitulo={abierto.tipo === "grupo" ? miembros.length + " miembros" : "Chat privado"}
-                        icono={abierto.tipo === "grupo" ? abierto.nombre[0].toUpperCase() : abierto.nombre[1].toUpperCase()}
+                        subtitulo={esGrupo ? miembros.length + " miembros" : "Chat privado"}
+                        icono={esGrupo ? abierto.nombre[0].toUpperCase() : abierto.nombre[1].toUpperCase()}
+                        miembros={mencionables}
                     />
                 )}
             </section>

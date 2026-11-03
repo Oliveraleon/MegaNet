@@ -3,8 +3,6 @@ import "./Chat.css"
 import { useEffect, useState } from "react"
 import { aplicarSalida, pedirMicrofono } from "../api/voz"
 
-// Ventana para elegir micrófono y auriculares, y probar que se escuche bien.
-// Lo elegido se guarda en localStorage y lo usa el canal de voz.
 function ConfigAudio({ onCerrar }) {
     const [microfonos, setMicrofonos] = useState([])
     const [salidas, setSalidas] = useState([])
@@ -16,21 +14,9 @@ function ConfigAudio({ onCerrar }) {
 
     const cargarDispositivos = async () => {
         try {
-            // Pedimos permiso al micrófono una vez para que el navegador muestre los nombres
             const permiso = await navigator.mediaDevices.getUserMedia({ audio: true })
-            for (const pista of permiso.getTracks()) {
-                pista.stop()
-            }
-
-            const dispositivos = await navigator.mediaDevices.enumerateDevices()
-            const entradas = []
-            const parlantes = []
-            for (const d of dispositivos) {
-                if (d.kind === "audioinput") entradas.push(d)
-                if (d.kind === "audiooutput") parlantes.push(d)
-            }
-            setMicrofonos(entradas)
-            setSalidas(parlantes)
+            permiso.getTracks().forEach((pista) => pista.stop())
+            setDispositivos(await navigator.mediaDevices.enumerateDevices())
         } catch {
             setEstado("No se pudo acceder al micrófono. Revisá los permisos del navegador.")
         }
@@ -40,13 +26,11 @@ function ConfigAudio({ onCerrar }) {
         cargarDispositivos()
     }, [])
 
-    // Guarda lo elegido para que lo use la prueba y el canal de voz
-    const guardar = () => {
+    useEffect(() => {
         localStorage.setItem("microfono", microfono)
         localStorage.setItem("auriculares", auriculares)
-    }
+    }, [microfono, auriculares])
 
-    // Graba 3 segundos con el micrófono, muestra el volumen y lo reproduce por los auriculares
     const probarMicrofono = async () => {
         guardar()
         try {
@@ -94,7 +78,6 @@ function ConfigAudio({ onCerrar }) {
         }
     }
 
-    // Reproduce un tono corto por los auriculares elegidos
     const probarSonido = async () => {
         guardar()
         const contexto = new AudioContext()
@@ -115,31 +98,26 @@ function ConfigAudio({ onCerrar }) {
             setEstado("¿Escuchaste el tono? Si no, elegí otra salida.")
         }, 1000)
     }
-
-    const cerrar = () => {
-        guardar()
-        onCerrar()
-    }
-
     const puedeElegirSalida = "setSinkId" in HTMLMediaElement.prototype
 
+    const opciones = (tipo, nombre) => {
+        return dispositivos
+            .filter((d) => d.kind === tipo)
+            .map((d) => <option key={d.deviceId} value={d.deviceId}>{d.label || nombre}</option>)
+    }
     return (
-        <div className="modal-fondo" onClick={cerrar}>
+        <div className="modal-fondo" onClick={onCerrar}>
             <div className="modal-caja" onClick={(e) => e.stopPropagation()}>
                 <div className="modal-titulo">
                     <h3>🎧 Configuración de audio</h3>
-                    <button className="boton-icono" onClick={cerrar}>✕</button>
+                    <button className="boton-icono" onClick={onCerrar}>✕</button>
                 </div>
 
                 <label className="campo">
                     <span>🎤 Micrófono (entrada)</span>
                     <select value={microfono} onChange={(e) => setMicrofono(e.target.value)}>
                         <option value="">Predeterminado</option>
-                        {microfonos.map((d) => (
-                            <option key={d.deviceId} value={d.deviceId}>
-                                {d.label || "Micrófono"}
-                            </option>
-                        ))}
+                        {opciones("audioinput", "Micrófono")}
                     </select>
                 </label>
 
@@ -153,30 +131,20 @@ function ConfigAudio({ onCerrar }) {
 
                 <label className="campo">
                     <span>🎧 Auriculares / parlantes (salida)</span>
-                    <select
-                        value={auriculares}
-                        onChange={(e) => setAuriculares(e.target.value)}
-                        disabled={!puedeElegirSalida}
-                    >
+                    <select value={auriculares} onChange={(e) => setAuriculares(e.target.value)} disabled={!puedeElegirSalida}>
                         <option value="">Predeterminado</option>
-                        {salidas.map((d) => (
-                            <option key={d.deviceId} value={d.deviceId}>
-                                {d.label || "Salida de audio"}
-                            </option>
-                        ))}
+                        {opciones("audiooutput", "Salida de audio")}
                     </select>
                 </label>
                 {!puedeElegirSalida && (
                     <p className="texto-suave">Tu navegador usa siempre la salida predeterminada (probá con Chrome o Edge).</p>
                 )}
 
-                <button className="boton boton-secundario" onClick={probarSonido}>
-                    Probar sonido
-                </button>
+                <button className="boton boton-secundario" onClick={probarSonido}>Probar sonido</button>
 
                 {estado && <p className="estado-audio">{estado}</p>}
 
-                <button className="boton" onClick={cerrar}>Guardar y cerrar</button>
+                <button className="boton" onClick={onCerrar}>Guardar y cerrar</button>
             </div>
         </div>
     )
