@@ -122,7 +122,7 @@ const getGrupo = async (req, res) => {
         for (let i = 0; i < filas.length; i++) {
             miembros.push(filas[i].usuario);
         }
-        res.status(200).json({ grupo, miembros, miConfig });
+            res.status(200).json({ grupo, miembros });
     } catch (error) {
         res.status(500).json({ message: "Error al obtener el grupo", error: error.message });
     }

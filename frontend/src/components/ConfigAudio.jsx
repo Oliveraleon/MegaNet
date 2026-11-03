@@ -4,8 +4,7 @@ import { useEffect, useState } from "react"
 import { aplicarSalida, pedirMicrofono } from "../api/voz"
 
 function ConfigAudio({ onCerrar }) {
-    const [microfonos, setMicrofonos] = useState([])
-    const [salidas, setSalidas] = useState([])
+    const [dispositivos, setDispositivos] = useState([])
     const [microfono, setMicrofono] = useState(localStorage.getItem("microfono") || "")
     const [auriculares, setAuriculares] = useState(localStorage.getItem("auriculares") || "")
     const [estado, setEstado] = useState("")
@@ -32,7 +31,6 @@ function ConfigAudio({ onCerrar }) {
     }, [microfono, auriculares])
 
     const probarMicrofono = async () => {
-        guardar()
         try {
             setProbando(true)
             const stream = await pedirMicrofono()
@@ -79,7 +77,6 @@ function ConfigAudio({ onCerrar }) {
     }
 
     const probarSonido = async () => {
-        guardar()
         const contexto = new AudioContext()
         const tono = contexto.createOscillator()
         const destino = contexto.createMediaStreamDestination()
