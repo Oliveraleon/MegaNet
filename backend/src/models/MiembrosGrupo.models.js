@@ -17,6 +17,10 @@ const MiembrosGrupo = sequelize.define(
             type: DataTypes.INTEGER,
             allowNull: false,
         },
+        notificaciones:{
+            type: DataTypes.STRING,
+            defaultValue: "todos",
+        },
     },
     {
         tableName: "MiembrosGrupo",
@@ -26,5 +30,6 @@ const MiembrosGrupo = sequelize.define(
         ],
     },
 );
+
 
 module.exports = MiembrosGrupo;

@@ -126,10 +126,7 @@ const getFeed = async (req, res) => {
 
     } catch (error) {
         console.error("Error al obtener el feed:", error);
-
-        return res.status(500).json({
-            message: "Error al obtener el feed"
-        });
+        return res.status(500).json({message: "Error al obtener el feed", error: error.message});
     }
 };
 

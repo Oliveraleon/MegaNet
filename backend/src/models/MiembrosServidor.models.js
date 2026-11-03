@@ -17,9 +17,12 @@ const MiembrosServidor = sequelize.define(
             type: DataTypes.INTEGER,
             allowNull: false,
         },
-        // Canal de voz en el que esta conectado (null = no esta en ninguno)
         canalVozId:{
             type: DataTypes.INTEGER,
+        },
+        notificaciones:{
+            type: DataTypes.STRING,
+            defaultValue: "todos",
         },
     },
     {

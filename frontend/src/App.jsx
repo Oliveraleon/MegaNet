@@ -18,6 +18,7 @@ import Amigos from "./components/Amigos"
 import Chat from "./components/Chat"
 import Servidores from "./components/Servidores"
 import PaginaComentarios from "./components/PaginaComentarios"
+import Secciones from "./components/Secciones"
 import { cerrarSesion, estaLogueado, getUsuario } from "./api/auth";
 
 function App() {
@@ -35,6 +36,8 @@ function App() {
         setUser(null);
         navigate("/login");
     }; 
+
+    const esSeccion = ["/home", "/chat", "/servidores"].some((ruta) => location.pathname.startsWith(ruta));
 
     const esPaginaAuth =
         location.pathname === "/login" ||
@@ -100,13 +103,6 @@ function App() {
                             </span>
                         </Link>
 
-                                                <Link to="/chat" style={{ textDecoration: "none", color: "#222", fontWeight: "600" }}>
-                            Chat
-                        </Link>
-                        <Link to="/servidores" style={{ textDecoration: "none", color: "#222", fontWeight: "600" }}>
-                            Servidores
-                        </Link>
-
                         <button
                             onClick={salir}
                             style={{
@@ -124,13 +120,14 @@ function App() {
                 )}
             </nav>
             <div style={{marginLeft: logueado && !esPaginaAuth ? "75px" : "0"}}>
+            {logueado && esSeccion && <Secciones />}
             <Routes>
                 <Route path="/" element={<Navigate to="/register" />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/home" element={<Home />} />
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/profile/:id" element={<Profile />} />
+                <Route path="/profile" element={<PerfilUsuario  />} />
+                <Route path="/profile/:id" element={<PerfilUsuario />} />
                 <Route path="/profileEdit" element={<ProfileEdit />} />
                 <Route path="/conexiones" element={<Conexiones />} />
                 <Route path="/conexiones/:id" element={<Conexiones />} />

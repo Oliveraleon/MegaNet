@@ -17,11 +17,15 @@ const Servidores = sequelize.define(
             type: DataTypes.INTEGER,
             allowNull: false,
         },
+        imagen:{
+            type: DataTypes.STRING,
+        },
     },
     {
         tableName: "Servidores",
         timestamps: false,
     },
 );
+
 
 module.exports = Servidores;
