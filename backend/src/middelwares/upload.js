@@ -55,11 +55,11 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
-const subirImagenMiddleware = upload.fields([
+const subirImagen = upload.fields([
     {name: "profilePicture", maxCount: 1},
     {name: "profileBanner", maxCount: 1},
     {name: "imagen", maxCount: 1},
     {name: "video", maxCount: 1}
 ]);
 
-module.exports = {subirImagenMiddleware, carpeta};
+module.exports = {subirImagen, carpeta};

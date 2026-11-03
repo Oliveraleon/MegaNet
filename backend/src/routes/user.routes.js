@@ -3,12 +3,12 @@ const { Router } = require("express");
 const { obtenerPerfil, actualizarPerfil, getFeed, getUsuarios, seguir, dejarDeSeguir, getSeguidores, getSiguiendo, buscarUser, obtenerUserPorId, actualizarContraseña, eliminarCuenta, recuperarCuenta, 
     reiniciarContraseña, verPerfil, enviarSolicitud, aceptarSolicitud, eliminarAmistad, getAmigos, getSolicitudes } = require("../controllers/User.controller.js");
 const { verificarToken, tokenOpcional } = require("../middelwares/Auth.middleware.js");
-const { subirImagenMiddleware } = require("../middelwares/upload.js");
+const { subirImagen } = require("../middelwares/upload.js");
 
 const route = Router();
 
 route.get("/profile", verificarToken, obtenerPerfil);
-route.patch("/profile", verificarToken,subirImagenMiddleware,actualizarPerfil)
+route.patch("/profile", verificarToken,subirImagen,actualizarPerfil)
 route.get('/feed', tokenOpcional, getFeed)
 route.get('/usuarios', verificarToken, getUsuarios)
 route.get('/seguidores/', verificarToken, getSeguidores)
