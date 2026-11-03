@@ -49,8 +49,9 @@ const getMensajesPrivados = async (req, res) => {
 const enviarMensajePrivado = async (req, res) => {
     try {
         const otroId = Number(req.params.id);
-        const { content } = req.body;
-        if (!textoValido(content)) {
+        const content = req.body.content || "";
+        const archivo = req.file ? req.file.filename : null;
+        if (!textoValido(content) && !archivo) {
             return res.status(400).json({ message: "El mensaje no puede estar vacio" });
         }
 
@@ -59,7 +60,7 @@ const enviarMensajePrivado = async (req, res) => {
             return res.status(403).json({ message: "Solo podes chatear con amigos o con personas que se siguen mutuamente" });
         }
 
-        await Mensajes.create({ content: content.trim(), senderId: req.usuario.id, receiverId: otroId });
+        await Mensajes.create({ content: content.trim(), archivo: archivo, senderId: req.usuario.id, receiverId: otroId });
         res.status(201).json({ message: "Mensaje enviado" });
     } catch (error) {
         res.status(500).json({ message: "Error al enviar el mensaje", error: error.message });
@@ -192,15 +193,16 @@ const getMensajesGrupo = async (req, res) => {
 const enviarMensajeGrupo = async (req, res) => {
     try {
         const grupoId = Number(req.params.id);
-        const { content } = req.body;
-        if (!textoValido(content)) {
+        const content = req.body.content || "";
+        const archivo = req.file ? req.file.filename : null;
+        if (!textoValido(content) && !archivo) {
             return res.status(400).json({ message: "El mensaje no puede estar vacio" });
         }
         if (!(await esMiembroGrupo(grupoId, req.usuario.id))) {
             return res.status(403).json({ message: "No sos miembro de este grupo" });
         }
 
-        await Mensajes.create({ content: content.trim(), senderId: req.usuario.id, grupoId: grupoId });
+        await Mensajes.create({ content: content.trim(), archivo: archivo, senderId: req.usuario.id, grupoId: grupoId });
         res.status(201).json({ message: "Mensaje enviado" });
     } catch (error) {
         res.status(500).json({ message: "Error al enviar el mensaje", error: error.message });
@@ -232,9 +234,8 @@ const crearServidor = async (req, res) => {
         const servidor = await Servidores.create({ name: name.trim(), ownerId: req.usuario.id });
         await MiembrosServidor.create({ servidorId: servidor.id, userId: req.usuario.id });
 
-        // Todo servidor arranca con un canal de texto y uno de voz
-        await Canales.create({ servidorId: servidor.id, name: "general", type: "texto" });
-        await Canales.create({ servidorId: servidor.id, name: "General", type: "voz" });
+        // Todo servidor arranca con un canal de texto "general"
+        await Canales.create({ servidorId: servidor.id, name: "general" });
 
         res.status(201).json({ message: "Servidor creado", servidor });
     } catch (error) {
@@ -251,7 +252,7 @@ const getServidor = async (req, res) => {
         }
 
         const servidor = await Servidores.findByPk(servidorId);
-        const canales = await Canales.findAll({ where: { servidorId: servidorId } });
+        const canales = await Canales.findAll({ where: { servidorId: servidorId, type: "texto" } });
         const filas = await MiembrosServidor.findAll({ where: { servidorId: servidorId }, include: incluirUsuario });
 
         const miembros = [];
@@ -259,23 +260,7 @@ const getServidor = async (req, res) => {
             miembros.push(filas[i].usuario);
         }
 
-        // A cada canal le agregamos quienes estan conectados (solo sirve en los de voz)
-        const lista = [];
-        for (let i = 0; i < canales.length; i++) {
-            const conectados = [];
-            for (let j = 0; j < filas.length; j++) {
-                if (filas[j].canalVozId === canales[i].id) {
-                    conectados.push(filas[j].usuario);
-                }
-            }
-            lista.push({
-                id: canales[i].id,
-                name: canales[i].name,
-                type: canales[i].type,
-                conectados: conectados,
-            });
-        }
-        res.status(200).json({ servidor, canales: lista, miembros });
+        res.status(200).json({ servidor, canales, miembros });
     } catch (error) {
         res.status(500).json({ message: "Error al obtener el servidor", error: error.message });
     }
@@ -312,7 +297,7 @@ const agregarMiembroServidor = async (req, res) => {
 const crearCanal = async (req, res) => {
     try {
         const servidorId = Number(req.params.id);
-        const { name, type } = req.body;
+        const { name } = req.body;
 
         const servidor = await Servidores.findByPk(servidorId);
         if (!servidor) {
@@ -324,11 +309,7 @@ const crearCanal = async (req, res) => {
         if (!textoValido(name)) {
             return res.status(400).json({ message: "El canal necesita un nombre" });
         }
-        if (type !== "texto" && type !== "voz") {
-            return res.status(400).json({ message: "El tipo de canal tiene que ser texto o voz" });
-        }
-
-        const canal = await Canales.create({ servidorId: servidorId, name: name.trim(), type: type });
+        const canal = await Canales.create({ servidorId: servidorId, name: name.trim() });
         res.status(201).json({ message: "Canal creado", canal });
     } catch (error) {
         res.status(500).json({ message: "Error al crear el canal", error: error.message });
@@ -358,8 +339,9 @@ const getMensajesCanal = async (req, res) => {
 
 const enviarMensajeCanal = async (req, res) => {
     try {
-        const { content } = req.body;
-        if (!textoValido(content)) {
+        const content = req.body.content || "";
+        const archivo = req.file ? req.file.filename : null;
+        if (!textoValido(content) && !archivo) {
             return res.status(400).json({ message: "El mensaje no puede estar vacio" });
         }
 
@@ -371,109 +353,10 @@ const enviarMensajeCanal = async (req, res) => {
             return res.status(403).json({ message: "No sos miembro de este servidor" });
         }
 
-        await Mensajes.create({ content: content.trim(), senderId: req.usuario.id, canalId: canal.id });
+        await Mensajes.create({ content: content.trim(), archivo: archivo, senderId: req.usuario.id, canalId: canal.id });
         res.status(201).json({ message: "Mensaje enviado" });
     } catch (error) {
         res.status(500).json({ message: "Error al enviar el mensaje", error: error.message });
-    }
-};
-
-// Entrar a un canal de voz: se guarda en que canal esta conectado el miembro
-const entrarVoz = async (req, res) => {
-    try {
-        const canal = await Canales.findByPk(Number(req.params.id));
-        if (!canal || canal.type !== "voz") {
-            return res.status(404).json({ message: "El canal de voz no existe" });
-        }
-        const miembro = await buscarMiembroServidor(canal.servidorId, req.usuario.id);
-        if (!miembro) {
-            return res.status(403).json({ message: "No sos miembro de este servidor" });
-        }
-
-        miembro.canalVozId = canal.id;
-        await miembro.save();
-        res.status(200).json({ message: "Entraste al canal de voz" });
-    } catch (error) {
-        res.status(500).json({ message: "Error al entrar al canal de voz", error: error.message });
-    }
-};
-
-const salirVoz = async (req, res) => {
-    try {
-        const canal = await Canales.findByPk(Number(req.params.id));
-        if (!canal) {
-            return res.status(404).json({ message: "El canal no existe" });
-        }
-        const miembro = await buscarMiembroServidor(canal.servidorId, req.usuario.id);
-        if (!miembro) {
-            return res.status(403).json({ message: "No sos miembro de este servidor" });
-        }
-
-        miembro.canalVozId = null;
-        await miembro.save();
-        res.status(200).json({ message: "Saliste del canal de voz" });
-    } catch (error) {
-        res.status(500).json({ message: "Error al salir del canal de voz", error: error.message });
-    }
-};
-
-let senales = [];
-
-// Revisa que el canal sea de voz y que el usuario sea miembro del servidor
-const puedeUsarVoz = async (canalId, userId) => {
-    const canal = await Canales.findByPk(canalId);
-    if (!canal || canal.type !== "voz") {
-        return false;
-    }
-    const miembro = await buscarMiembroServidor(canal.servidorId, userId);
-    return miembro !== null;
-};
-
-const enviarSenal = async (req, res) => {
-    try {
-        const canalId = Number(req.params.id);
-        const { para, tipo, datos } = req.body;
-        if (!(await puedeUsarVoz(canalId, req.usuario.id))) {
-            return res.status(403).json({ message: "No podes usar este canal de voz" });
-        }
-
-        senales.push({
-            canalId: canalId,
-            de: req.usuario.id,
-            para: Number(para),
-            tipo: tipo,
-            datos: datos,
-            fecha: Date.now(),
-        });
-        res.status(201).json({ message: "Senal enviada" });
-    } catch (error) {
-        res.status(500).json({ message: "Error al enviar la senal", error: error.message });
-    }
-};
-
-
-const recibirSenales = async (req, res) => {
-    try {
-        const canalId = Number(req.params.id);
-        if (!(await puedeUsarVoz(canalId, req.usuario.id))) {
-            return res.status(403).json({ message: "No podes usar este canal de voz" });
-        }
-
-        const mias = [];
-        const resto = [];
-        for (let i = 0; i < senales.length; i++) {
-            const s = senales[i];
-            const vieja = Date.now() - s.fecha > 30000;
-            if (s.para === req.usuario.id && s.canalId === canalId) {
-                mias.push(s);
-            } else if (!vieja) {
-                resto.push(s);
-            }
-        }
-        senales = resto;
-        res.status(200).json({ senales: mias });
-    } catch (error) {
-        res.status(500).json({ message: "Error al recibir las senales", error: error.message });
     }
 };
 
@@ -565,10 +448,6 @@ module.exports = {
     crearCanal,
     getMensajesCanal,
     enviarMensajeCanal,
-    entrarVoz,
-    salirVoz,
-    enviarSenal,
-    recibirSenales,
     editarServidor,
     salirDelServidor,
     eliminarServidor

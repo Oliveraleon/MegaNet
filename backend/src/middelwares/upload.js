@@ -35,4 +35,21 @@ const subirImagen = (req, res, next) => {
     })
 }
 
-module.exports = { subirImagen, carpeta }
+const uploadArchivo = multer({
+    storage,
+    limits: { fileSize: 25 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        const tipo = file.mimetype.split("/")[0]
+        if (tipo === "image" || tipo === "audio" || tipo === "video") cb(null, true)
+        else cb(new Error("Solo se pueden enviar imágenes, audios o videos"))
+    },
+})
+
+const subirArchivo = (req, res, next) => {
+    uploadArchivo.single("archivo")(req, res, (err) => {
+        if (err) return res.status(400).json({ message: err.message })
+        next()
+    })
+}
+
+module.exports = { subirImagen, subirArchivo, carpeta }

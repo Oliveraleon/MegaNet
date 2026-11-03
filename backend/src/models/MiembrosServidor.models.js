@@ -17,9 +17,6 @@ const MiembrosServidor = sequelize.define(
             type: DataTypes.INTEGER,
             allowNull: false,
         },
-        canalVozId:{
-            type: DataTypes.INTEGER,
-        },
         notificaciones:{
             type: DataTypes.STRING,
             defaultValue: "todos",

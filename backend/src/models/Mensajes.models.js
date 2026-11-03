@@ -32,6 +32,9 @@ const Mensajes = sequelize.define(
         canalId:{
             type: DataTypes.INTEGER,
         },
+        archivo:{
+            type: DataTypes.STRING,
+        },
     },
     {
         tableName: "Mensajes",
