@@ -1,5 +1,5 @@
 /* =====================================================
-   Chats, grupos, servidores y canales de voz
+   Chats, grupos, servidores y canales
    (archivo propio para no depender de Home.css)
    ===================================================== */
 
@@ -142,14 +142,6 @@
     background: var(--borde);
 }
 
-.boton-verde {
-    background: var(--verde);
-}
-
-.boton-verde:hover {
-    background: #16a34a;
-}
-
 .boton-rojo {
     background: var(--rojo);
 }
@@ -192,25 +184,7 @@
     background: var(--borde);
 }
 
-.boton-redondo {
-    width: 48px;
-    height: 48px;
-    border: none;
-    border-radius: 50%;
-    background: var(--fondo);
-    font-size: 1.3rem;
-    cursor: pointer;
-}
-
-.boton-redondo:hover {
-    background: var(--borde);
-}
-
-.boton-redondo.apagado {
-    background: #fde2e3;
-}
-
-/* ---------- Selector de dos opciones (Privados / Grupos, Texto / Voz) ---------- */
+/* ---------- Selector de dos opciones (Privados / Grupos) ---------- */
 
 .segmentado {
     display: flex;
@@ -377,8 +351,7 @@
 
 /* ---------- Ventana de mensajes ---------- */
 
-.ventana,
-.voz {
+.ventana {
     flex: 1;
     min-height: 0;
     display: flex;
@@ -629,22 +602,6 @@
     opacity: 0.8;
 }
 
-.conectado {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    padding: 0.15rem 0 0.15rem 2.1rem;
-    font-size: 0.85rem;
-    color: var(--texto);
-}
-
-.punto-verde {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--verde);
-}
-
 .miembro {
     display: flex;
     align-items: center;
@@ -670,63 +627,7 @@
     white-space: nowrap;
 }
 
-/* ---------- Canal de voz ---------- */
-
-.icono-voz {
-    font-size: 1.2rem;
-}
-
-.voz-participantes {
-    flex: 1;
-    display: flex;
-    flex-wrap: wrap;
-    align-content: center;
-    justify-content: center;
-    gap: 1rem;
-    padding: 1.5rem;
-    background: var(--fondo);
-    overflow-y: auto;
-}
-
-.participante {
-    width: 160px;
-    padding: 1.2rem 0.8rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.4rem;
-    background: var(--tarjeta);
-    border-radius: 16px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-}
-
-.participante.yo {
-    box-shadow: 0 0 0 2px var(--verde);
-}
-
-.participante-avatar {
-    width: 64px;
-    height: 64px;
-    border-radius: 50%;
-    background: var(--degradado);
-    color: #ffffff;
-    font-size: 1.6rem;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.voz-controles {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 0.8rem;
-    padding: 1rem;
-    border-top: 1px solid var(--borde);
-}
-
-/* ---------- Ventanas emergentes (crear servidor, administrar, audio) ---------- */
+/* ---------- Ventanas emergentes (crear servidor y opciones) ---------- */
 
 .modal-fondo {
     position: fixed;
@@ -772,28 +673,6 @@
     font-size: 0.85rem;
     font-weight: 600;
     color: var(--suave);
-}
-
-.medidor {
-    height: 10px;
-    border-radius: 999px;
-    background: var(--fondo);
-    overflow: hidden;
-}
-
-.medidor-barra {
-    height: 100%;
-    background: linear-gradient(90deg, var(--verde), #facc15, var(--rojo));
-    transition: width 0.1s;
-}
-
-.estado-audio {
-    margin: 0;
-    padding: 0.6rem 0.8rem;
-    border-radius: 10px;
-    background: var(--rosa-claro);
-    color: var(--rosa-oscuro);
-    font-size: 0.9rem;
 }
 
 /* ---------- Pantallas chicas ---------- */
@@ -1006,10 +885,6 @@
     gap: 0.4rem;
 }
 
-.segmentado.tres button {
-    font-size: 0.85rem;
-}
-
 /* Barra de miembros en pantallas chicas */
 @media (max-width: 800px) {
     .panel-miembros {
@@ -1040,4 +915,64 @@
 
 .servidor-campos input[type="file"]::file-selector-button:hover {
     background: #fbd5e1;
+}
+
+/* ---------- Archivos en los mensajes (imágenes, audios y videos) ---------- */
+.adjunto img,
+.adjunto video {
+    display: block;
+    max-width: 100%;
+    max-height: 280px;
+    margin: 0.3rem 0;
+    border-radius: 10px;
+}
+
+.adjunto img {
+    cursor: pointer;
+}
+
+.adjunto audio {
+    display: block;
+    width: 260px;
+    max-width: 100%;
+    margin: 0.3rem 0;
+}
+
+.boton-adjuntar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: var(--fondo);
+    font-size: 1.2rem;
+    cursor: pointer;
+}
+
+.boton-adjuntar:hover {
+    background: var(--borde);
+}
+
+/* Archivo elegido antes de enviar (aparece arriba de la caja de texto) */
+.adjunto-elegido {
+    position: absolute;
+    left: 1.2rem;
+    bottom: 100%;
+    margin-bottom: 0.4rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.8rem;
+    background: var(--tarjeta);
+    border: 1px solid var(--borde);
+    border-radius: 999px;
+    font-size: 0.85rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.escribir .adjunto-elegido button {
+    padding: 0;
+    background: none;
+    color: var(--suave);
 }

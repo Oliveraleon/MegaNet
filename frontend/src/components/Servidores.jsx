@@ -5,8 +5,6 @@ import { Navigate } from "react-router-dom"
 import { estaLogueado, getUsuario } from "../api/auth"
 import axios from "axios"
 import VentanaMensajes from "./VentanaMensajes"
-import CanalVoz from "./CanalVoz"
-import ConfigAudio from "./ConfigAudio"
 
 const API = "http://localhost:3000/chat/"
 const IMAGENES = "http://localhost:3000/imagenes/"
@@ -21,11 +19,9 @@ function Servidores() {
 
     const [verCrear, setVerCrear] = useState(false)
     const [verOpciones, setVerOpciones] = useState(false)
-    const [verConfig, setVerConfig] = useState(false)
     const [verMiembros, setVerMiembros] = useState(true)
     const [nombreServidor, setNombreServidor] = useState("")
     const [nombreCanal, setNombreCanal] = useState("")
-    const [tipoCanal, setTipoCanal] = useState("texto")
     const [invitado, setInvitado] = useState("")
     const [nuevoNombre, setNuevoNombre] = useState("")
     const [foto, setFoto] = useState(null)
@@ -90,7 +86,7 @@ function Servidores() {
     const crearCanal = async (e) => {
         e.preventDefault()
         try {
-            await axios.post(API + "servidores/" + servidorId + "/canales", { name: nombreCanal, type: tipoCanal }, config)
+            await axios.post(API + "servidores/" + servidorId + "/canales", { name: nombreCanal }, config)
             setNombreCanal("")
             cargarServidor()
         } catch (err) {
@@ -110,7 +106,7 @@ function Servidores() {
     }
 
     const guardarServidor = async (e) => {
-        e.preventDefault()
+        e.preventDefault() 
         try {
             const formulario = new FormData()
             formulario.append("name", nuevoNombre)
@@ -194,22 +190,11 @@ function Servidores() {
                         </div>
 
                         <div className="lista">
-                            {["texto", "voz"].map((tipo) => (
-                                <div key={tipo}>
-                                    <p className="seccion">{tipo === "texto" ? "Canales de texto" : "Canales de voz"}</p>
-                                    {datos.canales.filter((c) => c.type === tipo).map((c) => (
-                                        <div key={c.id}>
-                                            <button className={canalId === c.id ? "canal activo" : "canal"} onClick={() => setCanalId(c.id)}>
-                                                <span className="canal-icono">{tipo === "texto" ? "#" : "🔊"}</span> {c.name}
-                                            </button>
-                                            {c.conectados.map((u) => (
-                                                <div key={u.id} className="conectado">
-                                                    <span className="punto-verde"></span> @{u.username}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    ))}
-                                </div>
+                            <p className="seccion">Canales de texto</p>
+                            {datos.canales.map((c) => (
+                                <button key={c.id} className={canalId === c.id ? "canal activo" : "canal"} onClick={() => setCanalId(c.id)}>
+                                    <span className="canal-icono">#</span> {c.name}
+                                </button>
                             ))}
                         </div>
                     </>
@@ -218,7 +203,6 @@ function Servidores() {
                 <div className="barra-usuario">
                     <div className="avatar-mini">{yo?.username ? yo.username[0].toUpperCase() : "?"}</div>
                     <strong>@{yo?.username}</strong>
-                    <button className="boton-icono" onClick={() => setVerConfig(true)} title="Configuración de audio">🎧</button>
                 </div>
             </aside>
 
@@ -229,12 +213,12 @@ function Servidores() {
                         <div className="vacio grande">
                             <span className="vacio-icono">#</span>
                             <h3>{datos ? "Elegí un canal" : "Servidores"}</h3>
-                            <p>Los canales de texto son para escribir y los de voz para hablar con tu micrófono.</p>
+                               <p>Elegí un canal de texto de la izquierda para empezar a escribir.</p>
                         </div>
                     </>
                 )}
 
-                {canal && canal.type === "texto" && (
+                {canal && (
                     <VentanaMensajes
                         key={canal.id}
                         url={API + "canales/" + canal.id + "/mensajes"}
@@ -244,10 +228,6 @@ function Servidores() {
                         miembros={datos.miembros}
                         acciones={botonMiembros}
                     />
-                )}
-
-                {canal && canal.type === "voz" && (
-                    <CanalVoz canal={canal} yo={yo} onCambio={cargarServidor} acciones={botonMiembros} />
                 )}
             </section>
 
@@ -266,7 +246,6 @@ function Servidores() {
                                     {m.id === yo?.id && <span className="texto-suave"> (vos)</span>}
                                 </span>
                                 {m.id === datos.servidor.ownerId && <span title="Creador">👑</span>}
-                                {datos.canales.some((c) => c.conectados.some((u) => u.id === m.id)) && <span title="En un canal de voz">🔊</span>}
                             </div>
                         ))}
                     </div>
@@ -280,7 +259,7 @@ function Servidores() {
                             <h3>Crear un servidor</h3>
                             <button type="button" className="boton-icono" onClick={() => setVerCrear(false)}>✕</button>
                         </div>
-                        <p className="texto-suave">Arranca con un canal de texto "general" y uno de voz "General".</p>
+                        <p className="texto-suave">Arranca con un canal de texto "general".</p>
                         <input
                             type="text"
                             placeholder="Nombre del servidor"
@@ -325,10 +304,6 @@ function Servidores() {
                                 <form className="campo" onSubmit={crearCanal}>
                                     <span>Nuevo canal</span>
                                     <input type="text" placeholder="Nombre del canal" value={nombreCanal} onChange={(e) => setNombreCanal(e.target.value)} />
-                                    <div className="segmentado">
-                                        <button type="button" className={tipoCanal === "texto" ? "activo" : ""} onClick={() => setTipoCanal("texto")}># Texto</button>
-                                        <button type="button" className={tipoCanal === "voz" ? "activo" : ""} onClick={() => setTipoCanal("voz")}>🔊 Voz</button>
-                                    </div>
                                     <button type="submit" className="boton">Crear canal</button>
                                 </form>
 
@@ -351,8 +326,6 @@ function Servidores() {
                     </div>
                 </div>
             )}
-
-            {verConfig && <ConfigAudio onCerrar={() => setVerConfig(false)} />}
         </div>
     )
 }
