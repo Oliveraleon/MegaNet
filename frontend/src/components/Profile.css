@@ -261,3 +261,18 @@ textarea {
 .post-header-link:hover .post-username {
     text-decoration: underline;
 }
+
+.etiqueta {
+    display: inline-block;
+    padding: 3px 10px;
+    background: #eef2f5;
+    color: #4a5568;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.etiqueta.amigos {
+    background: #e1ffea;
+    color: #00a834;
+}

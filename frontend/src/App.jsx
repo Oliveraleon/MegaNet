@@ -126,8 +126,8 @@ function App() {
                 <Route path="/register" element={<Register />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/home" element={<Home />} />
-                <Route path="/profile" element={<PerfilUsuario  />} />
-                <Route path="/profile/:id" element={<PerfilUsuario />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/profile/:id" element={<Profile />} />
                 <Route path="/profileEdit" element={<ProfileEdit />} />
                 <Route path="/conexiones" element={<Conexiones />} />
                 <Route path="/conexiones/:id" element={<Conexiones />} />

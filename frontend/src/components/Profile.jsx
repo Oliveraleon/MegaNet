@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import { getUserPosts, estaLogueado, dejarDeSeguir, seguirUsuario, darLike, quitarLike, esAdmin } from "../api/auth"
+import { getUsuario, getUserPosts, estaLogueado, dejarDeSeguir, seguirUsuario, darLike, quitarLike, esAdmin } from "../api/auth"
 import { useNavigate, useParams, Link } from "react-router-dom"
 import axios from "axios"
 import "./Profile.css"
@@ -7,50 +7,96 @@ import FollowButton from "./FollowButton";
 
 function Profile(){
     const { id } = useParams();
+    const navigate = useNavigate();
+    const usuarioLogueado = JSON.parse(localStorage.getItem("user"));
     const [perfil, setPerfil] = useState(null);
     const [publicaciones, setPublicaciones] = useState([]);
     const [loSigue, setLoSigue] = useState(false);
     const [seguidores, setSeguidores] = useState([])
     const [siguiendo, setSiguiendo] = useState([])
     const [seguidos, setSeguidos] = useState([])
+    const [datos, setDatos] = useState(null)
     const [cambioLike, setCambioLike] = useState({});
-
-    // Estados para el menú de opciones del post y el modal de confirmación
+    const [error, setError] = useState("")
     const [menuPostAbiertoId, setMenuPostAbiertoId] = useState(null);
     const [postAEliminar, setPostAEliminar] = useState(null);
 
-    const navigate = useNavigate();
-    const usuarioLogueado = JSON.parse(localStorage.getItem("user"));
+    const token = localStorage.getItem("token");
+    const config = { headers: { Authorization: "Bearer " + token } }
     const miPerfil = !id || (usuarioLogueado && Number(id) === Number(usuarioLogueado.id));
+
+    // Funciones de amistad extraídas de PerfilUsuario.jsx
+    const enviarSolicitud = async () => {
+        try {
+            await axios.post("http://localhost:3000/user/amistad/" + id, {}, config)
+            cargarDatosPerfil()
+        } catch (err) {
+            alert(err.response?.data?.message || "No se pudo enviar la solicitud")
+        }
+    }
+
+    const aceptarSolicitud = async () => {
+        try {
+            await axios.post("http://localhost:3000/user/amistad/" + id + "/aceptar", {}, config)
+            cargarDatosPerfil()
+        } catch (err) {
+            alert(err.response?.data?.message || "No se pudo aceptar la solicitud")
+        }
+    }
+
+    const eliminarAmistad = async () => {
+        if (datos?.amistad === "amigos" && !confirm("¿Querés eliminar a @" + datos.usuario.username + " de tus amigos?")) {
+            return
+        }
+        try {
+            await axios.delete("http://localhost:3000/user/amistad/" + id, config)
+            cargarDatosPerfil()
+        } catch (err) {
+            alert(err.response?.data?.message || "No se pudo completar la accion")
+        }
+    }
 
     const cargarDatosPerfil = async () => {
         try {
-            const token = localStorage.getItem("token");
-            const config = { headers: { Authorization: "Bearer " + token } }
-            const urlSeguidores = id ? `http://localhost:3000/user/seguidores/${id}` : "http://localhost:3000/user/seguidores";
-            const urlSiguiendo = id ? `http://localhost:3000/user/siguiendo/${id}` : "http://localhost:3000/user/siguiendo";
+            setError("")
+            const idValido = id && id !== "undefined" ? id : null;
+            const urlSeguidores = idValido ? `http://localhost:3000/user/seguidores/${idValido}` : "http://localhost:3000/user/seguidores";
+            const urlSiguiendo = idValido ? `http://localhost:3000/user/siguiendo/${idValido}` : "http://localhost:3000/user/siguiendo";
             const res1 = await axios.get(urlSeguidores, config)
             const res2 = await axios.get(urlSiguiendo, config)
 
             setSeguidores(res1.data.usuarios)
             setSiguiendo(res2.data.usuarios)
             setSeguidos(res2.data.seguidos)
-            const url = miPerfil
+
+            // Carga adicional de datos de perfil/amistad si no es mi perfil
+            if (idValido) {
+                try {
+                    const resPerfilUsuario = await axios.get("http://localhost:3000/user/perfil/" + idValido, config)
+                    setDatos(resPerfilUsuario.data)
+                } catch (e) {
+                    console.log("Error al cargar datos de amistad:", e);
+                }
+            } else {
+                setDatos(null);
+            }
+
+            const url = !idValido   
                 ? "http://localhost:3000/user/profile" 
-                : `http://localhost:3000/user/${id}`;
+                : `http://localhost:3000/user/${idValido}`;
 
             const resUser = await fetch(url, {
                 headers: { "Authorization": `Bearer ${token}` }
             });
-            const datos = await resUser.json();
-            const usuarioData = datos.user || datos;
+            const datosUser = await resUser.json();
+            const usuarioData = datosUser.user || datosUser;
             setPerfil(usuarioData);
 
             let postData = [];
-            if(!id){
+            if(!idValido){
                 postData = await getUserPosts();
             }else{
-                const resPosts = await fetch(`http://localhost:3000/posts/user/${id}`,{
+                const resPosts = await fetch(`http://localhost:3000/posts/user/${idValido}`,{
                     headers: {"Authorization": `Bearer ${token}`}
                 });
                 postData = await resPosts.json();
@@ -61,7 +107,7 @@ function Profile(){
                 const datosSiguiendo = await resSiguiendo.json();
                 let estaSiguiendo = false;
                 for(let i = 0; i < datosSiguiendo.usuarios.length; i++){
-                    if(Number(datosSiguiendo.usuarios[i].id)===Number(id)){
+                    if(Number(datosSiguiendo.usuarios[i].id)===Number(idValido)){
                         estaSiguiendo = true;
                         break;
                     }
@@ -140,6 +186,7 @@ function Profile(){
             backgroundColor: perfil?.profileBanner ? "transparent" : "#f0f2f5"
         }}>
             <div className="main-container">
+                {error && <p className="home-error">{error}</p>}
                 <div className="profile-top">
                     
                     <div className="profile-header-info">
@@ -153,7 +200,11 @@ function Profile(){
                             }}
                         />
                         <div className="profile-user-details">
-                            <h2>{perfil?.username}</h2>    
+                            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                                <h2>{perfil?.username}</h2>    
+                                {datos?.amistad === "amigos" && <span className="etiqueta amigos">Amigos</span>}
+                                {datos?.meSigue && <span className="etiqueta">Te sigue</span>}
+                            </div>
                             <div style={{ display: "flex", alignItems: "center", gap: "20px", flexWrap: "wrap", marginTop: "8px" }}>
                                 <div className="profile-stats" style={{ display: "flex", gap: "15px" }}>
                                     <span><strong>{seguidores.length}</strong> Seguidores</span>
@@ -195,12 +246,33 @@ function Profile(){
                         Editar perfil
                     </button>
                 ) : (
-                    <FollowButton
-                        userId={id}
-                        username={perfil?.username}
-                        siguiendoInicial={loSigue}
-                        onChange={cargarDatosPerfil}
-                />
+                    <div className="perfil-actions" style={{ display: "flex", gap: "10px", marginTop: "15px", flexWrap: "wrap" }}>
+                        <FollowButton
+                            userId={id}
+                            username={perfil?.username}
+                            siguiendoInicial={loSigue}
+                            onChange={cargarDatosPerfil}
+                        />
+
+                        {datos?.amistad === "ninguna" && (
+                            <button className="small-btn" onClick={enviarSolicitud}>Agregar amigo</button>
+                        )}
+                        {datos?.amistad === "enviada" && (
+                            <button className="small-btn" onClick={eliminarAmistad}>Cancelar solicitud</button>
+                        )}
+                        {datos?.amistad === "recibida" && (
+                            <>
+                                <button className="small-btn" onClick={aceptarSolicitud}>Aceptar solicitud</button>
+                                <button className="small-btn danger" onClick={eliminarAmistad}>Rechazar</button>
+                            </>
+                        )}
+                        {datos?.amistad === "amigos" && (
+                            <button className="small-btn" onClick={eliminarAmistad}>Amigos ✓</button>
+                        )}
+                        {(datos?.amistad === "amigos" || (loSigue && datos?.meSigue)) && (
+                            <Link to={"/chat/" + perfil?.id} className="small-btn">Mensaje</Link>
+                        )}
+                    </div>
                 )}
                 </div>
 
@@ -215,7 +287,7 @@ function Profile(){
                             return (
                                 <div key={postId} className="post-card">
                                     <div className="post-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                        <Link to={`/profile/${autorId}`} className="post-header-link" style={{ display: "flex", alignItems: "center", gap: "12px", textDecoration: "none", color: "inherit" }}>
+                                        <Link to={autorId ? `/profile/${autorId}` : "/profile"} className="post-header-link" style={{ display: "flex", alignItems: "center", gap: "12px", textDecoration: "none", color: "inherit" }}>
                                             <img
                                                 src={perfil?.profilePicture ? `http://localhost:3000/${perfil.profilePicture}` : "/defaultProfile.png"}
                                                 alt="Foto de perfil"
