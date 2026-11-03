@@ -28,6 +28,19 @@ const tokenOpcional = (req, res, next) => {
     next();
 };
 
+const verificarRol = (req, res, next) => {
+    if(!req.usuario){
+        return res.status(401).json({message:"Tenes que iniciar sesion "})
+    }
+    if (req.usuario.rol !== "admin"){
+        return res.status(403).json({message:"No tenes permisos para realizar esta accion"})
+    }
+    next();
+}
+
 module.exports = { 
     verificarToken, 
-    tokenOpcional };
+    tokenOpcional,
+    verificarRol
+    
+ };

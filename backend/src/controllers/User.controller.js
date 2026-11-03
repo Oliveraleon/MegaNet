@@ -44,11 +44,13 @@ const actualizarPerfil = async (req, res) => {
         if (description !== undefined) {
             user.description = description;
         }
-        if (profilePicture !== undefined) {
-            user.profilePicture = profilePicture;
-        }
-        if (profileBanner !== undefined) {
-            user.profileBanner = profileBanner;
+        if(req.files){
+            if (req.files.profilePicture && req.files.profilePicture[0]){
+                user.profilePicture = `uploads/${req.files.profilePicture[0].filename}`;
+            }
+            if (req.files.profileBanner && req.files.profileBanner[0]) {
+                user.profileBanner = `uploads/${req.files.profileBanner[0].filename}`;
+            }
         }
         await user.save();
         return res.status(200).json({
@@ -82,42 +84,52 @@ const actualizarPerfil = async (req, res) => {
 
 const getFeed = async (req, res) => {
     try {
-        const incluirAutor = [{ model: User, as: "autor", attributes: ["id", "username", "profilePicture"] }];
+        const incluirAutor = [
+            {
+                model: User,
+                as: "autor",
+                attributes: ["id", "username", "profilePicture"]
+            }
+        ];
 
+        // Feed para invitados: publicaciones públicas
         if (!req.usuario) {
             const posts = await Publicaciones.findAll({
                 where: { privacy: "public" },
                 include: incluirAutor,
                 order: [["creationDate", "DESC"]],
             });
-                        return res.status(200).json({ tipo: "invitado", posts: await agregarDatos(posts, null) });
+
+            return res.status(200).json({
+                tipo: "invitado",
+                posts: await agregarDatos(posts, null)
+            });
         }
 
-               
+        // Feed para usuarios registrados: publicaciones de las cuentas seguidas
         const seguidos = await obtenerSeguidos(req.usuario.id);
-        const seguidores = await obtenerSeguidoresIds(req.usuario.id);
-        const amigos = await obtenerAmigos(req.usuario.id);
-
-        const ids = [req.usuario.id];
-        for (let i = 0; i < seguidos.length; i++) {
-            ids.push(seguidos[i]);
-        }
-        for (let i = 0; i < seguidores.length; i++) {
-            ids.push(seguidores[i]);
-        }
-        for (let i = 0; i < amigos.length; i++) {
-            ids.push(amigos[i]);
-        }
 
         const posts = await Publicaciones.findAll({
-            where: { userId: ids, privacy: ["public", "friends"] },
+            where: {
+                userId: seguidos
+            },
             include: incluirAutor,
             order: [["creationDate", "DESC"]],
         });
+
         const lista = await agregarDatos(posts, req.usuario.id);
-        res.status(200).json({ tipo: "registrado", posts: agregarRelacion(lista, seguidos, seguidores, amigos) });
+
+        return res.status(200).json({
+            tipo: "registrado",
+            posts: agregarRelacion(lista, seguidos, [], [])
+        });
+
     } catch (error) {
-        res.status(500).json({ message: "Error al obtener el feed"});
+        console.error("Error al obtener el feed:", error);
+
+        return res.status(500).json({
+            message: "Error al obtener el feed"
+        });
     }
 };
 
@@ -396,7 +408,7 @@ const verPerfil = async (req, res) => {
             where: { userId: otroId, privacy: privacidad },
             order: [["creationDate", "DESC"]],
         });
-
+        const publicacionesConDatos = await agregarDatos(publicaciones, req.usuario.id);
         res.status(200).json({
             usuario,
             loSigo: misSeguidos.includes(otroId),
@@ -404,7 +416,7 @@ const verPerfil = async (req, res) => {
             seguidores: susSeguidores.length,
             seguidos: susSeguidos.length,
             amistad,
-            publicaciones,
+            publicaciones: publicacionesConDatos,
         });
     } catch (error) {
         res.status(500).json({ message: "Error al obtener el perfil", error: error.message });

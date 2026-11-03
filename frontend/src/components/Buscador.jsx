@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react"
 import { useNavigate, useLocation, Link } from "react-router-dom"
-import { estaLogueado, getUsuario, buscarUsuarios } from "../api/auth"
+import {estaLogueado, getUsuario, buscarUsuarios } from "../api/auth"
 import "./Buscador.css"
+
+const API_URL = "http://localhost:3000";
 
 function Buscar(){
 
@@ -42,23 +44,34 @@ function Buscar(){
     return(
         <div className="buscador-container">
             <h2>Buscador</h2>
-            <input
-                type="text"
-                placeholder="Busca a un usuario"
-                value={busqueda}
-                onChange={manejarCambioInput}
-            />
+            
+            {/* Contenedor redondeado para la barra de búsqueda */}
+            <div className="search-bar">
+                <img src="/logoLupa.png" alt="Lupa" className="search-icon" />
+                <input
+                    type="text"
+                    placeholder="Busca a un usuario..."
+                    value={busqueda}
+                    onChange={manejarCambioInput}
+                    className="search-input"
+                />
+            </div>
+
             {error && <p className="error-msg">{error}</p>}
             
             <div className="resultados-lista">
                 {usuariosEncontrados.map((u) => (
                     <div key={u.id} className="usuario-card">
                         <img
-                            src={u.profilePicture || "/defaultProfile.png"}
+                            src={u.profilePicture ? `${API_URL}/${u.profilePicture}` : "/defaultProfile.png"}
                             alt={u.username}
-                            style={{ width: "40px", height: "40px", borderRadius: "50%", objectFit: "cover" }}
+                            className="usuario-avatar"
+                            onError={(e) => {
+                                e.currentTarget.onerror = null;
+                                e.currentTarget.src = "/defaultProfile.png";
+                            }}
                         />
-                        <Link to={`/profile/${u.id}`}>
+                        <Link to={`/profile/${u.id}`} className="usuario-link">
                             <span>{u.username}</span>
                         </Link>
                     </div>

@@ -9,7 +9,7 @@ import ProfileEdit from "./components/profileEdit";
 import Conexiones from "./components/Conexiones"
 import SubirPosts from "./components/SubirPost"
 import SideBar from "./components/SideBar";
-import Buscador from "./components/Buscador";
+import Buscador from "./components/buscador";
 import PasswordChange from "./components/PasswordChange"
 import RecuperarCuenta from "./components/RecuperarCuenta"
 import ReiniciarContraseña from "./components/ReiniciarContraseña"
@@ -17,6 +17,7 @@ import PerfilUsuario from "./components/PerfilUsuario"
 import Amigos from "./components/Amigos"
 import Chat from "./components/Chat"
 import Servidores from "./components/Servidores"
+import PaginaComentarios from "./components/PaginaComentarios"
 import { cerrarSesion, estaLogueado, getUsuario } from "./api/auth";
 
 function App() {
@@ -84,7 +85,7 @@ function App() {
                             }}
                         >
                             <img
-                                src={user?.profilePicture || "/defaultProfile.png"}
+                                src={user?.profilePicture ? `http://localhost:3000/${user.profilePicture}` : "/defaultProfile.png"}
                                 alt="Foto de perfil"
                                 style={{
                                     width: "40px",
@@ -143,6 +144,7 @@ function App() {
                 <Route path="/chat" element={<Chat />} />
                 <Route path="/chat/:id" element={<Chat />} />
                 <Route path="/servidores" element={<Servidores />} />
+                <Route path="/comentarios/:id" element={<PaginaComentarios />} />
             </Routes>
             </div>
         </>

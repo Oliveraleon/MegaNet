@@ -21,7 +21,7 @@ function SideBar(){
                 </Link>
                 <Link to="/profile" className="sidebar-item">
                     <img
-                        src={user?.profilePicture || "/defaultProfile.png"}
+                        src={user?.profilePicture ? `http://localhost:3000/${user.profilePicture}` : "/defaultProfile.png"}
                         alt="Perfil"
                         className="sidebar-avatar"
                         style={{ width: "24px", height: "24px", objectFit: "contain" }}

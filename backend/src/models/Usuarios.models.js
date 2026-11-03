@@ -37,6 +37,11 @@ const Usuarios = sequelize.define(
         },
         following:{
             type: DataTypes.INTEGER
+        },
+        rol:{
+            type: DataTypes.ENUM("user", "admin"),
+            allowNull: false,
+            defaultValue: "user"
         }
     },
     {

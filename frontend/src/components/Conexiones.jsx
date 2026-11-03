@@ -3,7 +3,9 @@ import { Navigate, useParams, useNavigate } from "react-router-dom"
 import { estaLogueado } from "../api/auth"
 import axios from "axios"
 import FollowButton from "./FollowButton"
-import "./Home.css"
+import "./Conexiones.css"
+
+const API_URL = "http://localhost:3000";
 
 function Conexiones() {
     const { id } = useParams();
@@ -67,7 +69,7 @@ function Conexiones() {
                         <div className="post-author" onClick={() => navigate(`/profile/${u.id}`)} style={{ cursor: "pointer" }}>
                             <div className="avatar">
                                 <img 
-                                    src={u.profilePicture || "/defaultProfile.png"}
+                                    src={u.profilePicture ? `${API_URL}/${u.profilePicture}` : "/defaultProfile.png"}
                                     alt={u.username}
                                     style={{ width: "40px", height: "40px", borderRadius: "50%", objectFit: "cover" }}
                                     onError={(e)=>{
