@@ -31,7 +31,6 @@ function Amigos() {
         cargar()
     }
 
-    // Sirve para rechazar una solicitud o para eliminar a un amigo
     const eliminar = async (id) => {
         if (tab === "amigos" && !confirm("¿Querés eliminar a este amigo?")) return
         await axios.delete("http://localhost:3000/user/amistad/" + id, config)

@@ -7,7 +7,7 @@ const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 const nodemailer = require('nodemailer')
 const { agregarDatos } = require("./Auth.controller.js");
-const { obtenerSeguidos, obtenerSeguidoresIds, obtenerAmigos, buscarAmistad, agregarRelacion } = require("../utilities/utilidades.js");
+const { obtenerSeguidos, obtenerSeguidoresIds, obtenerAmigos, buscarAmistad, agregarRelacion, puedeVerPost, notificar, borrarUsuario } = require("../utilities/utilidades.js");
     
 const JWT_SECRET = "clave_secreta_meganet";
 
@@ -44,11 +44,13 @@ const actualizarPerfil = async (req, res) => {
         if (description !== undefined) {
             user.description = description;
         }
-        if (profilePicture !== undefined) {
-            user.profilePicture = profilePicture;
-        }
-        if (profileBanner !== undefined) {
-            user.profileBanner = profileBanner;
+        if(req.files){
+            if (req.files.profilePicture && req.files.profilePicture[0]){
+                user.profilePicture = `uploads/${req.files.profilePicture[0].filename}`;
+            }
+            if (req.files.profileBanner && req.files.profileBanner[0]) {
+                user.profileBanner = `uploads/${req.files.profileBanner[0].filename}`;
+            }
         }
         await user.save();
         return res.status(200).json({
@@ -82,7 +84,13 @@ const actualizarPerfil = async (req, res) => {
 
 const getFeed = async (req, res) => {
     try {
-        const incluirAutor = [{ model: User, as: "autor", attributes: ["id", "username", "profilePicture"] }];
+        const incluirAutor = [
+            {
+                model: User,
+                as: "autor",
+                attributes: ["id", "username", "profilePicture"]
+            }
+        ];
 
         if (!req.usuario) {
             const posts = await Publicaciones.findAll({
@@ -90,34 +98,43 @@ const getFeed = async (req, res) => {
                 include: incluirAutor,
                 order: [["creationDate", "DESC"]],
             });
-                        return res.status(200).json({ tipo: "invitado", posts: await agregarDatos(posts, null) });
+
+            return res.status(200).json({
+                tipo: "invitado",
+                posts: await agregarDatos(posts, null)
+            });
         }
 
-               
         const seguidos = await obtenerSeguidos(req.usuario.id);
-        const seguidores = await obtenerSeguidoresIds(req.usuario.id);
         const amigos = await obtenerAmigos(req.usuario.id);
 
-        const ids = [req.usuario.id];
-        for (let i = 0; i < seguidos.length; i++) {
-            ids.push(seguidos[i]);
-        }
-        for (let i = 0; i < seguidores.length; i++) {
-            ids.push(seguidores[i]);
-        }
-        for (let i = 0; i < amigos.length; i++) {
-            ids.push(amigos[i]);
-        }
-
-        const posts = await Publicaciones.findAll({
-            where: { userId: ids, privacy: ["public", "friends"] },
+        // Mis publicaciones + las de la gente que sigo
+        const todos = await Publicaciones.findAll({
+            where: {
+                userId: [...seguidos, req.usuario.id]
+            },
             include: incluirAutor,
             order: [["creationDate", "DESC"]],
         });
+
+        // Se filtran segun la privacidad de cada publicacion
+        const posts = [];
+        for (let i = 0; i < todos.length; i++) {
+            if (puedeVerPost(todos[i], req.usuario.id, amigos)) {
+                posts.push(todos[i]);
+            }
+        }
+
         const lista = await agregarDatos(posts, req.usuario.id);
-        res.status(200).json({ tipo: "registrado", posts: agregarRelacion(lista, seguidos, seguidores, amigos) });
+
+        return res.status(200).json({
+            tipo: "registrado",
+            posts: agregarRelacion(lista, seguidos, [], amigos)
+        });
+
     } catch (error) {
-        res.status(500).json({ message: "Error al obtener el feed", error: error.message });
+        console.error("Error al obtener el feed:", error);
+        return res.status(500).json({message: "Error al obtener el feed", error: error.message});
     }
 };
 
@@ -156,6 +173,8 @@ const seguir = async (req, res) => {
         });
         if (!yaLoSigue) {
             await Seguidores.create({ followerId: req.usuario.id, followedId: otroId });
+            const yo = await User.findByPk(req.usuario.id);
+            await notificar(otroId, "➕ @" + yo.username + " empezó a seguirte", "/profile/" + req.usuario.id);
         }
         res.status(201).json({ message: "Ahora seguis a " + otroUsuario.username });
     } catch (error) {
@@ -278,16 +297,8 @@ const eliminarCuenta = async (req,res)=>{
         if(!user){
             return res.status(404).json({message:"Usuario no encontrado"})
         }
-        await Publicaciones.destroy({ where: { userId: userId } });
-        await Seguidores.destroy({
-            where:{
-                [Op.or]:[
-                    {followerId: userId},
-                    {followedId: userId}
-                ]
-            }
-        });
-        await user.destroy()
+        // Borra el usuario y todo lo suyo (posts, mensajes, amistades, grupos...)
+        await borrarUsuario(userId);
         res.status(200).json({ message: "Cuenta eliminada correctamente" });
     }catch(error){
         console.error("Error al eliminar la cuenta:", error);
@@ -356,7 +367,7 @@ const reiniciarContraseña = async (req,res)=>{
         return res.status(400).json({ message: "El enlace es inválido o ha expirado" });
     }
 }
-// ---------- Ver a otro usuario, amigos y solicitudes de amistad ----------
+
 
 const verPerfil = async (req, res) => {
     try {
@@ -368,13 +379,12 @@ const verPerfil = async (req, res) => {
             return res.status(404).json({ message: "El usuario no existe" });
         }
 
-        // Relacion de seguimiento
+
         const misSeguidos = await obtenerSeguidos(req.usuario.id);
         const misSeguidores = await obtenerSeguidoresIds(req.usuario.id);
         const susSeguidos = await obtenerSeguidos(otroId);
         const susSeguidores = await obtenerSeguidoresIds(otroId);
 
-        // Relacion de amistad: ninguna, enviada, recibida o amigos
         let amistad = "ninguna";
         const relacion = await buscarAmistad(req.usuario.id, otroId);
         if (relacion) {
@@ -387,7 +397,6 @@ const verPerfil = async (req, res) => {
             }
         }
 
-        // Los amigos tambien ven las publicaciones con privacidad "friends"
         const privacidad = ["public"];
         if (amistad === "amigos") {
             privacidad.push("friends");
@@ -396,7 +405,7 @@ const verPerfil = async (req, res) => {
             where: { userId: otroId, privacy: privacidad },
             order: [["creationDate", "DESC"]],
         });
-
+        const publicacionesConDatos = await agregarDatos(publicaciones, req.usuario.id);
         res.status(200).json({
             usuario,
             loSigo: misSeguidos.includes(otroId),
@@ -404,7 +413,7 @@ const verPerfil = async (req, res) => {
             seguidores: susSeguidores.length,
             seguidos: susSeguidos.length,
             amistad,
-            publicaciones,
+            publicaciones: publicacionesConDatos,
         });
     } catch (error) {
         res.status(500).json({ message: "Error al obtener el perfil", error: error.message });
@@ -435,6 +444,8 @@ const enviarSolicitud = async (req, res) => {
         }
 
         await Amistades.create({ senderId: req.usuario.id, receiverId: otroId });
+        const yo = await User.findByPk(req.usuario.id);
+        await notificar(otroId, "🤝 @" + yo.username + " te envió una solicitud de amistad", "/profile/" + req.usuario.id);
         res.status(201).json({ message: "Solicitud enviada a " + otroUsuario.username });
     } catch (error) {
         res.status(500).json({ message: "Error al enviar la solicitud", error: error.message });
@@ -445,7 +456,6 @@ const aceptarSolicitud = async (req, res) => {
     try {
         const otroId = Number(req.params.id);
 
-        // Solo puede aceptar quien la recibio
         const solicitud = await Amistades.findOne({
             where: { senderId: otroId, receiverId: req.usuario.id, status: "pendiente" },
         });
@@ -455,13 +465,14 @@ const aceptarSolicitud = async (req, res) => {
 
         solicitud.status = "aceptada";
         await solicitud.save();
+        const yo = await User.findByPk(req.usuario.id);
+        await notificar(otroId, "🎉 @" + yo.username + " aceptó tu solicitud de amistad", "/profile/" + req.usuario.id);
         res.status(200).json({ message: "Ahora son amigos" });
     } catch (error) {
         res.status(500).json({ message: "Error al aceptar la solicitud", error: error.message });
     }
 };
 
-// Sirve para rechazar una solicitud, cancelar la que envie o eliminar a un amigo
 const eliminarAmistad = async (req, res) => {
     try {
         const otroId = Number(req.params.id);
@@ -490,7 +501,6 @@ const getAmigos = async (req, res) => {
     }
 };
 
-// Solicitudes que me enviaron y todavia no acepte
 const getSolicitudes = async (req, res) => {
     try {
         const solicitudes = await Amistades.findAll({

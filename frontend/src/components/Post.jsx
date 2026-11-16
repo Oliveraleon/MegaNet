@@ -9,24 +9,19 @@ function Post({ post, user, tipo, onChange }) {
     const token = localStorage.getItem("token")
     const config = { headers: { Authorization: "Bearer " + token } }
 
-    // Like
     const [liked, setLiked] = useState(post.liked)
     const [likes, setLikes] = useState(post.likes)
-    const [corazon, setCorazon] = useState(false) // corazon grande del doble click
+    const [corazon, setCorazon] = useState(false)
 
-    // Editar
     const [editando, setEditando] = useState(false)
     const [texto, setTexto] = useState(post.content)
 
-    // Comentarios
     const [verComentarios, setVerComentarios] = useState(false)
     const [comentarios, setComentarios] = useState([])
     const [nuevo, setNuevo] = useState("")
 
-    // Solo el dueño de la publicacion ve los botones de editar y eliminar
     const esMio = post.autor.id === user?.id
 
-        // Relacion con el autor: amigo, luego lo sigo y por ultimo me sigue
     let etiqueta = ""
     if (post.esAmigo) {
         etiqueta = "Amigos"
@@ -58,7 +53,6 @@ function Post({ post, user, tipo, onChange }) {
         setLikes(likes - 1)
     }
 
-    // Click en el corazon: da o saca el like
     const clickCorazon = () => {
         if (liked) {
             quitarLike()
@@ -67,7 +61,6 @@ function Post({ post, user, tipo, onChange }) {
         }
     }
 
-    // Doble click en la imagen: solo da like (nunca lo saca)
     const dobleClick = () => {
         if (!liked) {
             darLike()

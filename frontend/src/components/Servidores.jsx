@@ -2,12 +2,13 @@ import "./Chat.css"
 
 import { useEffect, useState } from "react"
 import { Navigate } from "react-router-dom"
-import { estaLogueado, getUsuario } from "../api/auth"
+import { estaLogueado, getUsuario, esAdmin } from "../api/auth"
 import axios from "axios"
 import VentanaMensajes from "./VentanaMensajes"
+import Avatar from "./Avatar"
 
 const API = "http://localhost:3000/chat/"
-const IMAGENES = "http://localhost:3000/imagenes/"
+const IMAGENES = "http://localhost:3000/uploads/"
 
 function Servidores() {
     const [servidores, setServidores] = useState([])
@@ -25,16 +26,22 @@ function Servidores() {
     const [invitado, setInvitado] = useState("")
     const [nuevoNombre, setNuevoNombre] = useState("")
     const [foto, setFoto] = useState(null)
+    const [error, setError] = useState("")
 
     const token = localStorage.getItem("token")
     const config = { headers: { Authorization: "Bearer " + token } }
     const yo = getUsuario()
 
     const cargarLista = async () => {
-        const res1 = await axios.get(API + "servidores", config)
-        const res2 = await axios.get(API + "contactos", config)
-        setServidores(res1.data.servidores)
-        setContactos(res2.data.usuarios)
+        try {
+            const res1 = await axios.get(API + "servidores", config)
+            const res2 = await axios.get(API + "contactos", config)
+            setServidores(res1.data.servidores)
+            setContactos(res2.data.usuarios)
+            setError("")
+        } catch (err) {
+            setError(err.response?.data?.message || "No se pudieron cargar los servidores. ¿Está prendido el backend?")
+        }
     }
 
     const cerrarServidor = () => {
@@ -141,6 +148,9 @@ function Servidores() {
 
     const canal = datos?.canales.find((c) => c.id === canalId)
     const soyDueno = datos && datos.servidor.ownerId === yo?.id
+    // El dueño y el admin pueden editar, crear canales, invitar y eliminar
+    const puedoAdministrar = datos && (soyDueno || esAdmin())
+    const soyMiembro = datos && datos.miembros.some((m) => m.id === yo?.id)
 
     const botonMiembros = datos && (
         <button
@@ -169,10 +179,13 @@ function Servidores() {
             </nav>
 
             <aside className="panel-canales">
+                {error && <p className="aviso-error">{error}</p>}
+
                 {!datos && (
                     <div className="vacio">
                         <span className="vacio-icono">🖥️</span>
-                        <p>{servidores.length === 0 ? "Creá tu primer servidor con el botón +" : "Elegí un servidor"}</p>
+                        <p>{servidores.length === 0 ? "Creá tu primer servidor con el botón +" : "Elegí un servidor de la izquierda"}</p>
+                        {esAdmin() && <p className="aviso-admin">🛡️ Sos administrador: ves todos los servidores</p>}
                     </div>
                 )}
 
@@ -201,8 +214,9 @@ function Servidores() {
                 )}
 
                 <div className="barra-usuario">
-                    <div className="avatar-mini">{yo?.username ? yo.username[0].toUpperCase() : "?"}</div>
+                    <Avatar usuario={yo} clase="avatar-mini" />
                     <strong>@{yo?.username}</strong>
+                    {esAdmin() && <span className="etiqueta-admin">Admin</span>}
                 </div>
             </aside>
 
@@ -240,7 +254,7 @@ function Servidores() {
                     <div className="lista">
                         {datos.miembros.map((m) => (
                             <div key={m.id} className="miembro">
-                                <div className="avatar-mini">{m.username[0].toUpperCase()}</div>
+                                <Avatar usuario={m} clase="avatar-mini" />
                                 <span className="miembro-nombre">
                                     @{m.username}
                                     {m.id === yo?.id && <span className="texto-suave"> (vos)</span>}
@@ -279,7 +293,11 @@ function Servidores() {
                             <button className="boton-icono" onClick={() => setVerOpciones(false)}>✕</button>
                         </div>
 
-                        {soyDueno && (
+                        {puedoAdministrar && !soyDueno && (
+                            <p className="aviso-admin">🛡️ Estás editando como administrador</p>
+                        )}
+
+                        {puedoAdministrar && (
                             <>
                                 <form className="campo" onSubmit={guardarServidor}>
                                     <span>Nombre y foto</span>
@@ -295,7 +313,10 @@ function Servidores() {
                                         </div>
                                         <div className="servidor-campos">
                                             <input type="text" value={nuevoNombre} onChange={(e) => setNuevoNombre(e.target.value)} placeholder="Nombre del servidor" />
-                                            <input type="file" accept="image/*" onChange={(e) => setFoto(e.target.files[0])} />
+                                            <label className="boton-archivo">
+                                                📷 {foto ? foto.name : "Elegir foto"}
+                                                <input type="file" accept="image/*" hidden onChange={(e) => setFoto(e.target.files[0])} />
+                                            </label>
                                         </div>
                                     </div>
                                     <button type="submit" className="boton">Guardar cambios</button>
@@ -320,9 +341,12 @@ function Servidores() {
                             </>
                         )}
 
-                        <button className="boton boton-rojo" onClick={() => salirOEliminar(soyDueno)}>
-                            {soyDueno ? "🗑️ Eliminar servidor" : "🚪 Salir del servidor"}
-                        </button>
+                        {soyMiembro && !soyDueno && (
+                            <button className="boton boton-secundario" onClick={() => salirOEliminar(false)}>🚪 Salir del servidor</button>
+                        )}
+                        {puedoAdministrar && (
+                            <button className="boton boton-rojo" onClick={() => salirOEliminar(true)}>🗑️ Eliminar servidor</button>
+                        )}
                     </div>
                 </div>
             )}

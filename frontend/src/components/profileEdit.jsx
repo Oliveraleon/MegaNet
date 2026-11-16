@@ -7,9 +7,7 @@ import "./Profile.css";
 function EditProfile() {
     const [formData, setFormData] = useState({
         username: "",
-        description: "",
-        profilePicture: "",
-        profileBanner: ""
+        description: ""
     });
     const navigate = useNavigate();
     const [mostrarMenuEliminar, setMostrarMenuEliminar] = useState(false);
@@ -43,21 +41,9 @@ function EditProfile() {
 
     const handleFileChange = (e) =>{
         const file = e.target.files[0];
-        const fieldName = e.target.name;
-
-        if(file){
-            if(!file.type.startsWith("image/")){
-                alert("Selecciona un archivo de imagen valido");
-                return;
-            }
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setFormData((prevData)=> ({
-                    ...prevData,
-                    [fieldName]:reader.result
-                }));
-            };
-            reader.readAsDataURL(file);
+        if (file && !file.type.startsWith("image/")){
+            alert("Selecciona un archivo de imagen válido");
+            e.target.value = "";
         }
     };
 
@@ -67,12 +53,25 @@ function EditProfile() {
             alert("El nombre de usuario no puede estar vacío")
             return;
         }
-        if(formData.description > 250){
+        if(formData.description.length > 250){
             alert("La biografia no puede superar los 250 caracteres")
             return;
         }
         try {
-            await actualizarPerfil(formData);
+            const dataForm = new FormData();
+            dataForm.append("username", formData.username);
+            dataForm.append("description", formData.description);
+            if(fileInputProfileRef.current && fileInputProfileRef.current.files[0]){
+                dataForm.append("profilePicture", fileInputProfileRef.current.files[0]);
+            }
+            if(fileInputBannerRef.current && fileInputBannerRef.current.files[0]){
+                dataForm.append("profileBanner", fileInputBannerRef.current.files[0]);
+            }
+            const respuesta = await actualizarPerfil(dataForm);
+            const usuarioActualizado = respuesta.user || respuesta;
+            if(usuarioActualizado){
+                localStorage.setItem("user", JSON.stringify(usuarioActualizado));
+            }
             alert("¡Perfil actualizado con éxito!");
             navigate("/profile"); 
         } catch (error) {

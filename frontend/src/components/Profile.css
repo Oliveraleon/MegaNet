@@ -143,3 +143,130 @@ textarea {
     max-height: 150px;
     box-sizing: border-box;
 }
+
+.post-card {
+    background: #ffffff;
+    border: 1px solid #dbdbdb;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 20px;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.post-text {
+    font-size: 15px;
+    color: #262626;
+    margin-bottom: 12px;
+    word-break: break-word;
+}
+
+.post-media-container {
+    width: 100%;
+    max-height: 450px;
+    background: #000;
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.post-media {
+    width: 100%;
+    max-height: 450px;
+    object-fit: contain;
+}
+
+.post-date {
+    font-size: 12px;
+    color: #8e8e8e;
+    display: block;
+    margin-bottom: 10px;
+}
+
+.post-actions {
+    display: flex;
+    border-top: 1px solid #efefef;
+    padding-top: 10px;
+    gap: 15px;
+}
+
+.action-btn {
+    background: transparent;
+    border: none;
+    color: #555;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 5px 10px;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+.action-btn:hover {
+    background: #f0f2f5;
+    color: #000;
+}
+
+.post-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.post-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid #dbdbdb;
+}
+
+.post-user-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.post-username {
+    font-weight: 600;
+    font-size: 14px;
+    color: #262626;
+}
+
+.post-date {
+    font-size: 11px;
+    color: #8e8e8e;
+}
+
+.post-header-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    color: inherit;
+    flex-grow: 1;
+}
+
+.post-header-link:hover .post-username {
+    text-decoration: underline;
+}
+
+.etiqueta {
+    display: inline-block;
+    padding: 3px 10px;
+    background: #eef2f5;
+    color: #4a5568;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.etiqueta.amigos {
+    background: #e1ffea;
+    color: #00a834;
+}

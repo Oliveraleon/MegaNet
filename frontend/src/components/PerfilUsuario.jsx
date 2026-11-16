@@ -29,7 +29,6 @@ function PerfilUsuario() {
         }
     }, [id])
 
-    // Enviar solicitud de amistad
     const enviarSolicitud = async () => {
         try {
             await axios.post("http://localhost:3000/user/amistad/" + id, {}, config)
@@ -39,7 +38,6 @@ function PerfilUsuario() {
         }
     }
 
-    // Aceptar la solicitud que me enviaron
     const aceptarSolicitud = async () => {
         try {
             await axios.post("http://localhost:3000/user/amistad/" + id + "/aceptar", {}, config)
@@ -49,7 +47,6 @@ function PerfilUsuario() {
         }
     }
 
-    // Cancelar la solicitud que envie, rechazar la que recibi o eliminar a un amigo
     const eliminarAmistad = async () => {
         if (datos.amistad === "amigos" && !confirm("¿Querés eliminar a @" + datos.usuario.username + " de tus amigos?")) {
             return

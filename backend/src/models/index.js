@@ -10,6 +10,8 @@ const MiembrosGrupo = require("./MiembrosGrupo.models.js");
 const Servidores = require("./Servidores.models.js");
 const MiembrosServidor = require("./MiembrosServidor.models.js");
 const Canales = require("./Canales.models.js");
+const Eventos = require("./Eventos.models.js");
+const Notificaciones = require("./Notificaciones.models.js");
 
 Usuarios.hasMany(Publicaciones, { foreignKey: "userId", as: "publicaciones" });
 Publicaciones.belongsTo(Usuarios, { foreignKey: "userId", as: "autor" });
@@ -38,6 +40,7 @@ Comentarios.belongsTo(Usuarios, { foreignKey: "userId", as: "autor" });
 Mensajes.belongsTo(Usuarios, { foreignKey: "senderId", as: "autor" });
 MiembrosGrupo.belongsTo(Usuarios, { foreignKey: "userId", as: "usuario" });
 MiembrosServidor.belongsTo(Usuarios, { foreignKey: "userId", as: "usuario" });
+Eventos.belongsTo(Usuarios, { foreignKey: "creadorId", as: "creador" });
 
 module.exports = { 
     Usuarios, 
@@ -51,5 +54,7 @@ module.exports = {
     MiembrosGrupo,
     Servidores,
     MiembrosServidor,
-    Canales
+    Canales,
+    Eventos,
+    Notificaciones
 };

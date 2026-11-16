@@ -30,8 +30,6 @@ function Login() {
         <div className="login-container">
             <div className="login-card">
                 <h2>Iniciar sesión</h2>
-                <p className="subtitle">Iniciá sesión para continuar</p>
-
                 {location.state?.registrado && (
                     <p style={{ color: "green" }}>¡Registro exitoso! Ahora iniciá sesión.</p>
                 )}

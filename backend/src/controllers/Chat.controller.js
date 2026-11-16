@@ -5,10 +5,40 @@ const MiembrosGrupo = require("../models/MiembrosGrupo.models.js");
 const Servidores = require("../models/Servidores.models.js");
 const MiembrosServidor = require("../models/MiembrosServidor.models.js");
 const Canales = require("../models/Canales.models.js");
-const { obtenerContactos, esMiembroGrupo, buscarMiembroServidor, textoValido } = require("../utilities/utilidades.js");
+const Eventos = require("../models/Eventos.models.js");
+const Notificaciones = require("../models/Notificaciones.models.js");
+const { obtenerContactos, esMiembroGrupo, buscarMiembroServidor, textoValido, esAdmin, notificar } = require("../utilities/utilidades.js");
 
 const incluirAutor = [{ model: User, as: "autor", attributes: ["id", "username", "profilePicture"] }];
 const incluirUsuario = [{ model: User, as: "usuario", attributes: ["id", "username", "profilePicture"] }];
+
+// ---------- Permisos: el admin puede entrar y moderar todos los grupos y servidores ----------
+const puedeVerGrupo = async (grupoId, usuario) => {
+    return esAdmin(usuario) || (await esMiembroGrupo(grupoId, usuario.id));
+};
+
+const puedeVerServidor = async (servidorId, usuario) => {
+    return esAdmin(usuario) || (await buscarMiembroServidor(servidorId, usuario.id)) !== null;
+};
+
+const puedeAdministrar = (duenoId, usuario) => {
+    return duenoId === usuario.id || esAdmin(usuario);
+};
+
+// Avisa a los miembros que fueron mencionados con @usuario en un mensaje
+const avisarMenciones = async (content, filas, autor, lugar, link) => {
+    const palabras = content.toLowerCase().split(" ");
+    const nombres = [];
+    for (let i = 0; i < palabras.length; i++) {
+        nombres.push(palabras[i].replace(/[.,!?;:]+$/, ""));
+    }
+    for (let i = 0; i < filas.length; i++) {
+        const u = filas[i].usuario;
+        if (u && u.id !== autor.id && nombres.includes("@" + u.username.toLowerCase())) {
+            await notificar(u.id, "@" + autor.username + " te mencionó en " + lugar, link);
+        }
+    }
+};
 
 const getContactos = async (req, res) => {
     try {
@@ -30,8 +60,6 @@ const getMensajesPrivados = async (req, res) => {
         if (!contactos.includes(otroId)) {
             return res.status(403).json({ message: "Solo podes chatear con amigos o con personas que se siguen mutuamente" });
         }
-
-        // Mensajes que yo le mande a el y que el me mando a mi
         const mensajes = await Mensajes.findAll({
             where: {
                 senderId: [req.usuario.id, otroId],
@@ -61,13 +89,19 @@ const enviarMensajePrivado = async (req, res) => {
         }
 
         await Mensajes.create({ content: content.trim(), archivo: archivo, senderId: req.usuario.id, receiverId: otroId });
+
+        // Un solo aviso por persona hasta que lo lea (para no llenar la campanita)
+        const link = "/chat/" + req.usuario.id;
+        const yaAvisado = await Notificaciones.findOne({ where: { userId: otroId, link: link, leida: false } });
+        if (!yaAvisado) {
+            const autor = await User.findByPk(req.usuario.id);
+            await notificar(otroId, "💬 @" + autor.username + " te envió un mensaje", link);
+        }
         res.status(201).json({ message: "Mensaje enviado" });
     } catch (error) {
         res.status(500).json({ message: "Error al enviar el mensaje", error: error.message });
     }
 };
-
-// ---------- Grupos ----------
 
 const getGrupos = async (req, res) => {
     try {
@@ -76,7 +110,10 @@ const getGrupos = async (req, res) => {
         for (let i = 0; i < filas.length; i++) {
             ids.push(filas[i].grupoId);
         }
-        const grupos = await Grupos.findAll({ where: { id: ids } });
+        let grupos = await Grupos.findAll({ where: { id: ids } });
+        if (esAdmin(req.usuario)) {
+            grupos = await Grupos.findAll();
+        }
         res.status(200).json({ grupos });
     } catch (error) {
         res.status(500).json({ message: "Error al obtener los grupos", error: error.message });
@@ -90,7 +127,6 @@ const crearGrupo = async (req, res) => {
             return res.status(400).json({ message: "El grupo necesita un nombre" });
         }
 
-        // Solo se pueden agregar contactos (amigos o seguidores mutuos)
         const contactos = await obtenerContactos(req.usuario.id);
         const lista = miembros || [];
         for (let i = 0; i < lista.length; i++) {
@@ -101,8 +137,10 @@ const crearGrupo = async (req, res) => {
 
         const grupo = await Grupos.create({ name: name.trim(), ownerId: req.usuario.id });
         await MiembrosGrupo.create({ grupoId: grupo.id, userId: req.usuario.id });
+        const creador = await User.findByPk(req.usuario.id);
         for (let i = 0; i < lista.length; i++) {
             await MiembrosGrupo.create({ grupoId: grupo.id, userId: lista[i] });
+            await notificar(lista[i], "👥 @" + creador.username + " te agregó al grupo " + grupo.name, "/chat");
         }
         res.status(201).json({ message: "Grupo creado", grupo });
     } catch (error) {
@@ -113,7 +151,7 @@ const crearGrupo = async (req, res) => {
 const getGrupo = async (req, res) => {
     try {
         const grupoId = Number(req.params.id);
-        if (!(await esMiembroGrupo(grupoId, req.usuario.id))) {
+        if (!(await puedeVerGrupo(grupoId, req.usuario))) {
             return res.status(403).json({ message: "No sos miembro de este grupo" });
         }
 
@@ -138,12 +176,12 @@ const agregarMiembroGrupo = async (req, res) => {
         if (!grupo) {
             return res.status(404).json({ message: "El grupo no existe" });
         }
-        if (grupo.ownerId !== req.usuario.id) {
+        if (!puedeAdministrar(grupo.ownerId, req.usuario)) {
             return res.status(403).json({ message: "Solo el creador puede agregar miembros" });
         }
 
         const contactos = await obtenerContactos(req.usuario.id);
-        if (!contactos.includes(nuevoId)) {
+        if (!contactos.includes(nuevoId) && !esAdmin(req.usuario)) {
             return res.status(400).json({ message: "Solo podes agregar amigos o personas que se siguen mutuamente" });
         }
         if (await esMiembroGrupo(grupoId, nuevoId)) {
@@ -151,6 +189,7 @@ const agregarMiembroGrupo = async (req, res) => {
         }
 
         await MiembrosGrupo.create({ grupoId: grupoId, userId: nuevoId });
+        await notificar(nuevoId, "👥 Te agregaron al grupo " + grupo.name, "/chat");
         res.status(201).json({ message: "Miembro agregado" });
     } catch (error) {
         res.status(500).json({ message: "Error al agregar el miembro", error: error.message });
@@ -175,7 +214,7 @@ const salirDelGrupo = async (req, res) => {
 const getMensajesGrupo = async (req, res) => {
     try {
         const grupoId = Number(req.params.id);
-        if (!(await esMiembroGrupo(grupoId, req.usuario.id))) {
+        if (!(await puedeVerGrupo(grupoId, req.usuario))) {
             return res.status(403).json({ message: "No sos miembro de este grupo" });
         }
 
@@ -198,11 +237,16 @@ const enviarMensajeGrupo = async (req, res) => {
         if (!textoValido(content) && !archivo) {
             return res.status(400).json({ message: "El mensaje no puede estar vacio" });
         }
-        if (!(await esMiembroGrupo(grupoId, req.usuario.id))) {
+        if (!(await puedeVerGrupo(grupoId, req.usuario))) {
             return res.status(403).json({ message: "No sos miembro de este grupo" });
         }
 
         await Mensajes.create({ content: content.trim(), archivo: archivo, senderId: req.usuario.id, grupoId: grupoId });
+
+        const grupo = await Grupos.findByPk(grupoId);
+        const autor = await User.findByPk(req.usuario.id);
+        const filas = await MiembrosGrupo.findAll({ where: { grupoId: grupoId }, include: incluirUsuario });
+        await avisarMenciones(content, filas, autor, "el grupo " + grupo.name, "/chat");
         res.status(201).json({ message: "Mensaje enviado" });
     } catch (error) {
         res.status(500).json({ message: "Error al enviar el mensaje", error: error.message });
@@ -217,7 +261,10 @@ const getServidores = async (req, res) => {
         for (let i = 0; i < filas.length; i++) {
             ids.push(filas[i].servidorId);
         }
-        const servidores = await Servidores.findAll({ where: { id: ids } });
+        let servidores = await Servidores.findAll({ where: { id: ids } });
+        if (esAdmin(req.usuario)) {
+            servidores = await Servidores.findAll();
+        }
         res.status(200).json({ servidores });
     } catch (error) {
         res.status(500).json({ message: "Error al obtener los servidores", error: error.message });
@@ -234,7 +281,6 @@ const crearServidor = async (req, res) => {
         const servidor = await Servidores.create({ name: name.trim(), ownerId: req.usuario.id });
         await MiembrosServidor.create({ servidorId: servidor.id, userId: req.usuario.id });
 
-        // Todo servidor arranca con un canal de texto "general"
         await Canales.create({ servidorId: servidor.id, name: "general" });
 
         res.status(201).json({ message: "Servidor creado", servidor });
@@ -246,8 +292,7 @@ const crearServidor = async (req, res) => {
 const getServidor = async (req, res) => {
     try {
         const servidorId = Number(req.params.id);
-        const yo = await buscarMiembroServidor(servidorId, req.usuario.id);
-        if (!yo) {
+        if (!(await puedeVerServidor(servidorId, req.usuario))) {
             return res.status(403).json({ message: "No sos miembro de este servidor" });
         }
 
@@ -275,12 +320,12 @@ const agregarMiembroServidor = async (req, res) => {
         if (!servidor) {
             return res.status(404).json({ message: "El servidor no existe" });
         }
-        if (servidor.ownerId !== req.usuario.id) {
+        if (!puedeAdministrar(servidor.ownerId, req.usuario)) {
             return res.status(403).json({ message: "Solo el creador puede invitar miembros" });
         }
 
         const contactos = await obtenerContactos(req.usuario.id);
-        if (!contactos.includes(nuevoId)) {
+        if (!contactos.includes(nuevoId) && !esAdmin(req.usuario)) {
             return res.status(400).json({ message: "Solo podes invitar amigos o personas que se siguen mutuamente" });
         }
         if (await buscarMiembroServidor(servidorId, nuevoId)) {
@@ -288,6 +333,7 @@ const agregarMiembroServidor = async (req, res) => {
         }
 
         await MiembrosServidor.create({ servidorId: servidorId, userId: nuevoId });
+        await notificar(nuevoId, "🖥️ Te invitaron al servidor " + servidor.name, "/servidores");
         res.status(201).json({ message: "Miembro agregado" });
     } catch (error) {
         res.status(500).json({ message: "Error al agregar el miembro", error: error.message });
@@ -303,7 +349,7 @@ const crearCanal = async (req, res) => {
         if (!servidor) {
             return res.status(404).json({ message: "El servidor no existe" });
         }
-        if (servidor.ownerId !== req.usuario.id) {
+        if (!puedeAdministrar(servidor.ownerId, req.usuario)) {
             return res.status(403).json({ message: "Solo el creador puede crear canales" });
         }
         if (!textoValido(name)) {
@@ -322,7 +368,7 @@ const getMensajesCanal = async (req, res) => {
         if (!canal || canal.type !== "texto") {
             return res.status(404).json({ message: "El canal de texto no existe" });
         }
-        if (!(await buscarMiembroServidor(canal.servidorId, req.usuario.id))) {
+        if (!(await puedeVerServidor(canal.servidorId, req.usuario))) {
             return res.status(403).json({ message: "No sos miembro de este servidor" });
         }
 
@@ -349,11 +395,16 @@ const enviarMensajeCanal = async (req, res) => {
         if (!canal || canal.type !== "texto") {
             return res.status(404).json({ message: "El canal de texto no existe" });
         }
-        if (!(await buscarMiembroServidor(canal.servidorId, req.usuario.id))) {
+        if (!(await puedeVerServidor(canal.servidorId, req.usuario))) {
             return res.status(403).json({ message: "No sos miembro de este servidor" });
         }
 
         await Mensajes.create({ content: content.trim(), archivo: archivo, senderId: req.usuario.id, canalId: canal.id });
+
+        const servidor = await Servidores.findByPk(canal.servidorId);
+        const autor = await User.findByPk(req.usuario.id);
+        const filas = await MiembrosServidor.findAll({ where: { servidorId: canal.servidorId }, include: incluirUsuario });
+        await avisarMenciones(content, filas, autor, "#" + canal.name + " (" + servidor.name + ")", "/servidores");
         res.status(201).json({ message: "Mensaje enviado" });
     } catch (error) {
         res.status(500).json({ message: "Error al enviar el mensaje", error: error.message });
@@ -366,7 +417,7 @@ const editarServidor = async (req, res) => {
         if (!servidor) {
             return res.status(404).json({ message: "El servidor no existe" });
         }
-        if (servidor.ownerId !== req.usuario.id) {
+        if (!puedeAdministrar(servidor.ownerId, req.usuario)) {
             return res.status(403).json({ message: "Solo el creador puede editar el servidor" });
         }
         if (!textoValido(req.body.name)) {
@@ -374,8 +425,8 @@ const editarServidor = async (req, res) => {
         }
 
         servidor.name = req.body.name.trim();
-        if (req.file) {
-            servidor.imagen = req.file.filename;
+        if (req.files && req.files.imagen && req.files.imagen[0]) {
+            servidor.imagen = req.files.imagen[0].filename;
         }
         await servidor.save();
         res.status(200).json({ message: "Servidor actualizado", servidor });
@@ -391,7 +442,6 @@ const salirDelServidor = async (req, res) => {
         if (!servidor) {
             return res.status(404).json({ message: "El servidor no existe" });
         }
-        // El creador no puede irse: si no lo quiere mas, lo elimina
         if (servidor.ownerId === req.usuario.id) {
             return res.status(400).json({ message: "Sos el creador: si no lo queres mas, eliminalo" });
         }
@@ -403,7 +453,6 @@ const salirDelServidor = async (req, res) => {
     }
 };
 
-// Borra el servidor con sus canales, mensajes y miembros (solo el creador)
 const eliminarServidor = async (req, res) => {
     try {
         const servidorId = Number(req.params.id);
@@ -411,7 +460,7 @@ const eliminarServidor = async (req, res) => {
         if (!servidor) {
             return res.status(404).json({ message: "El servidor no existe" });
         }
-        if (servidor.ownerId !== req.usuario.id) {
+        if (!puedeAdministrar(servidor.ownerId, req.usuario)) {
             return res.status(403).json({ message: "Solo el creador puede eliminar el servidor" });
         }
 
@@ -427,6 +476,123 @@ const eliminarServidor = async (req, res) => {
         res.status(200).json({ message: "Servidor eliminado" });
     } catch (error) {
         res.status(500).json({ message: "Error al eliminar el servidor", error: error.message });
+    }
+};
+
+// ---------- Agregado: eliminar grupo, eliminar mensaje y calendario de eventos ----------
+
+const eliminarGrupo = async (req, res) => {
+    try {
+        const grupo = await Grupos.findByPk(Number(req.params.id));
+        if (!grupo) {
+            return res.status(404).json({ message: "El grupo no existe" });
+        }
+        if (!puedeAdministrar(grupo.ownerId, req.usuario)) {
+            return res.status(403).json({ message: "Solo el creador o un admin pueden eliminar el grupo" });
+        }
+
+        await Mensajes.destroy({ where: { grupoId: grupo.id } });
+        await Eventos.destroy({ where: { grupoId: grupo.id } });
+        await MiembrosGrupo.destroy({ where: { grupoId: grupo.id } });
+        await grupo.destroy();
+        res.status(200).json({ message: "Grupo eliminado" });
+    } catch (error) {
+        res.status(500).json({ message: "Error al eliminar el grupo", error: error.message });
+    }
+};
+
+const eliminarMensaje = async (req, res) => {
+    try {
+        const mensaje = await Mensajes.findByPk(Number(req.params.id));
+        if (!mensaje) {
+            return res.status(404).json({ message: "El mensaje no existe" });
+        }
+        if (!puedeAdministrar(mensaje.senderId, req.usuario)) {
+            return res.status(403).json({ message: "Solo podes borrar tus propios mensajes" });
+        }
+
+        await mensaje.destroy();
+        res.status(200).json({ message: "Mensaje eliminado" });
+    } catch (error) {
+        res.status(500).json({ message: "Error al eliminar el mensaje", error: error.message });
+    }
+};
+
+const getEventos = async (req, res) => {
+    try {
+        const grupoId = Number(req.params.id);
+        if (!(await puedeVerGrupo(grupoId, req.usuario))) {
+            return res.status(403).json({ message: "No sos miembro de este grupo" });
+        }
+
+        const eventos = await Eventos.findAll({
+            where: { grupoId: grupoId },
+            include: [{ model: User, as: "creador", attributes: ["id", "username", "profilePicture"] }],
+            order: [["fecha", "ASC"]],
+        });
+        res.status(200).json({ eventos });
+    } catch (error) {
+        res.status(500).json({ message: "Error al obtener los eventos", error: error.message });
+    }
+};
+
+const crearEvento = async (req, res) => {
+    try {
+        const grupoId = Number(req.params.id);
+        const { titulo, descripcion, fecha } = req.body;
+        if (!(await puedeVerGrupo(grupoId, req.usuario))) {
+            return res.status(403).json({ message: "No sos miembro de este grupo" });
+        }
+        if (!textoValido(titulo)) {
+            return res.status(400).json({ message: "El evento necesita un título" });
+        }
+        const cuando = new Date(fecha);
+        if (!fecha || isNaN(cuando.getTime())) {
+            return res.status(400).json({ message: "Elegí una fecha y hora válidas" });
+        }
+
+        const evento = await Eventos.create({
+            grupoId: grupoId,
+            creadorId: req.usuario.id,
+            titulo: titulo.trim(),
+            descripcion: descripcion ? descripcion.trim() : null,
+            fecha: cuando,
+        });
+
+        // Aviso a todos los miembros del grupo menos al que lo creó
+        const grupo = await Grupos.findByPk(grupoId);
+        const filas = await MiembrosGrupo.findAll({ where: { grupoId: grupoId } });
+        const texto = "📅 Nuevo evento en " + grupo.name + ": " + evento.titulo + " (" +
+            cuando.toLocaleDateString("es-AR") + " " +
+            cuando.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", hour12: false }) + ")";
+        for (let i = 0; i < filas.length; i++) {
+            if (filas[i].userId !== req.usuario.id) {
+                await notificar(filas[i].userId, texto, "/chat");
+            }
+        }
+        res.status(201).json({ message: "Evento creado", evento });
+    } catch (error) {
+        res.status(500).json({ message: "Error al crear el evento", error: error.message });
+    }
+};
+
+const eliminarEvento = async (req, res) => {
+    try {
+        const evento = await Eventos.findByPk(Number(req.params.id));
+        if (!evento) {
+            return res.status(404).json({ message: "El evento no existe" });
+        }
+        const grupo = await Grupos.findByPk(evento.grupoId);
+        const esCreador = evento.creadorId === req.usuario.id;
+        if (!esCreador && !puedeAdministrar(grupo.ownerId, req.usuario)) {
+            return res.status(403).json({ message: "Solo quien creó el evento, el dueño del grupo o un admin pueden borrarlo" });
+        }
+
+        await Notificaciones.destroy({ where: { eventoId: evento.id } });
+        await evento.destroy();
+        res.status(200).json({ message: "Evento eliminado" });
+    } catch (error) {
+        res.status(500).json({ message: "Error al eliminar el evento", error: error.message });
     }
 };
 
@@ -450,5 +616,10 @@ module.exports = {
     enviarMensajeCanal,
     editarServidor,
     salirDelServidor,
-    eliminarServidor
+    eliminarServidor,
+    eliminarGrupo,
+    eliminarMensaje,
+    getEventos,
+    crearEvento,
+    eliminarEvento
 };

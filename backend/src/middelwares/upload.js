@@ -1,17 +1,13 @@
-const multer = require("multer")
+/*const multer = require("multer")
 const path = require("path")
 const fs = require("fs")
 
-// Carpeta donde se guardan las fotos: backend/uploads
-// (sube dos niveles desde src/middelwares hasta backend)
 const carpeta = path.join(__dirname, "..", "..", "uploads")
 
-// Si la carpeta no existe, la crea
 if (!fs.existsSync(carpeta)) fs.mkdirSync(carpeta)
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, carpeta),
-    // Nombre único para que dos fotos nunca se pisen
     filename: (req, file, cb) => {
         const extension = path.extname(file.originalname).toLowerCase()
         cb(null, Date.now() + "-" + Math.round(Math.random() * 1e9) + extension)
@@ -20,20 +16,55 @@ const storage = multer.diskStorage({
 
 const upload = multer({
     storage,
-    limits: { fileSize: 5 * 1024 * 1024 }, // máximo 5 MB
+    limits: { fileSize: 5 * 1024 * 1024 },
     fileFilter: (req, file, cb) => {
         if (file.mimetype.startsWith("image/")) cb(null, true)
         else cb(new Error("Solo se permiten imágenes"))
     },
 })
 
-// Si algo sale mal, responde con el mismo formato de mensajes que el resto de la API
-const subirImagen = (req, res, next) => {
-    upload.single("imagen")(req, res, (err) => {
+// Middleware para recibir la foto de perfil y el banner simultáneamente
+const subirImágenesPerfil = upload.fields([
+    { name: "profilePicture", maxCount: 1 },
+    { name: "profileBanner", maxCount: 1 }
+]);
+
+const subirImagenMiddleware = (req, res, next) => {
+    subirImágenesPerfil(req, res, (err) => {
         if (err) return res.status(400).json({ message: err.message })
         next()
     })
 }
+
+module.exports = { subirImagenMiddleware, carpeta }*/
+
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
+
+const carpeta = path.join(__dirname, "..", "..", "uploads");
+
+// La carpeta uploads esta en el .gitignore: si no existe (por ejemplo al clonar el repo) se crea sola
+if (!fs.existsSync(carpeta)) fs.mkdirSync(carpeta);
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, carpeta);
+    },
+    filename: (req, file, cb) => {
+        const nombreLimpio = file.originalname.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_.-]/g, "");
+        cb(null, Date.now() + "-" + nombreLimpio);
+    }
+});
+
+const upload = multer({ storage: storage });
+
+const subirImagen = upload.fields([
+    {name: "profilePicture", maxCount: 1},
+    {name: "profileBanner", maxCount: 1},
+    {name: "imagen", maxCount: 1},
+    {name: "video", maxCount: 1}
+]);
 
 const uploadArchivo = multer({
     storage,

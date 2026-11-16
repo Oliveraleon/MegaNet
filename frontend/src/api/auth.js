@@ -100,10 +100,9 @@ export async function actualizarPerfil(datosNuevos) {
     const res = await fetch("http://localhost:3000/user/profile", {
         method: "PATCH",
         headers: {
-            "Content-Type": "application/json",
             "Authorization": `Bearer ${token}`
         },
-        body: JSON.stringify(datosNuevos)
+        body: datosNuevos
     });
 
     const datos = await res.json();
@@ -249,3 +248,91 @@ export async function reiniciarContraseña(token, nuevaPassword){
     throw error;
   }
 }
+
+export async function darLike(postId) {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`http://localhost:3000/auth/publicaciones/${postId}/like`, {
+    method: "POST",
+    headers: { "Authorization": `Bearer ${token}` }
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || "Error al dar like");
+  return data;
+}
+
+export async function quitarLike(postId) {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`http://localhost:3000/auth/publicaciones/${postId}/like`, {
+    method: "DELETE",
+    headers: { "Authorization": `Bearer ${token}` }
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || "Error al quitar like");
+  return data;
+}
+
+export async function obtenerComentarios(postId){
+  try{
+    const token = localStorage.getItem("token");
+    if (!token) throw new Error("No se proporcionó un token válido");
+    const res = await fetch(`${BASE_URL}/auth/publicaciones/${postId}/comentarios`,{
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Error al obtener comentarios");
+    return data;
+  }catch(error){
+    console.log("Error al obtener comentarios", error);
+    throw error;
+  }
+}
+
+export async function crearComentario(postId, text){
+  try{
+    const token = localStorage.getItem("token");
+    if (!token) throw new Error("No se proporcionó un token válido");
+    const res = await fetch(`${BASE_URL}/auth/publicaciones/${postId}/comentarios`,{
+      method: "POST",
+      headers:{
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({ text })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Error al crear comentario");
+    return data;
+  }catch(error){
+    console.log("Error al crear comentario", error);
+    throw error;
+  }
+}
+
+export async function eliminarComentario(postId, comentarioId){
+  try{
+    const token = localStorage.getItem("token");
+    if (!token) throw new Error("No se proporcionó un token válido");
+    const res = await fetch(`${BASE_URL}/auth/publicaciones/${postId}/comentarios/${comentarioId}`,{
+      method: "DELETE",
+      headers:{
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+    },
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || "Error al eliminar comentario");
+  return data;
+  }catch(error){
+    console.log("Error al eliminar comentario", error);
+    throw error;
+  }
+}
+
+export const esAdmin = () => {
+    const user = JSON.parse(localStorage.getItem("user"));
+    return user && user.rol === "admin";
+};

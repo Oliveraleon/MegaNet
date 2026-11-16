@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Route, Routes, Link, Navigate, useNavigate, useLocation } from "react-router-dom";
 import Login from "./components/Login";
@@ -9,7 +8,7 @@ import ProfileEdit from "./components/profileEdit";
 import Conexiones from "./components/Conexiones"
 import SubirPosts from "./components/SubirPost"
 import SideBar from "./components/SideBar";
-import Buscador from "./components/Buscador";
+import Buscador from "./components/buscador";
 import PasswordChange from "./components/PasswordChange"
 import RecuperarCuenta from "./components/RecuperarCuenta"
 import ReiniciarContraseña from "./components/ReiniciarContraseña"
@@ -17,8 +16,10 @@ import PerfilUsuario from "./components/PerfilUsuario"
 import Amigos from "./components/Amigos"
 import Chat from "./components/Chat"
 import Servidores from "./components/Servidores"
+import PaginaComentarios from "./components/PaginaComentarios"
 import Secciones from "./components/Secciones"
-import { cerrarSesion, estaLogueado, getUsuario } from "./api/auth";
+import Notificaciones from "./components/Notificaciones"
+import { cerrarSesion, estaLogueado, getUsuario, esAdmin } from "./api/auth";
 
 function App() {
     const navigate = useNavigate();
@@ -70,6 +71,7 @@ function App() {
                         alignItems: "center",
                         gap: "15px"
                     }}>
+                        <Notificaciones />
                         <Link to="/amigos" style={{ textDecoration: "none", color: "#222", fontWeight: "600" }}>
                             Amigos
                         </Link>
@@ -87,7 +89,7 @@ function App() {
                             }}
                         >
                             <img
-                                src={user?.profilePicture || "/defaultProfile.png"}
+                                src={user?.profilePicture ? `http://localhost:3000/${user.profilePicture}` : "/defaultProfile.png"}
                                 alt="Foto de perfil"
                                 style={{
                                     width: "40px",
@@ -100,6 +102,7 @@ function App() {
                             <span style={{ fontWeight: "600" }}>
                                 {user?.username || user?.email || "Mi perfil"}
                             </span>
+                            {esAdmin() && <span className="etiqueta-admin">Admin</span>}
                         </Link>
 
                         <button
@@ -125,8 +128,8 @@ function App() {
                 <Route path="/register" element={<Register />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/home" element={<Home />} />
-                <Route path="/profile" element={<PerfilUsuario  />} />
-                <Route path="/profile/:id" element={<PerfilUsuario />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/profile/:id" element={<Profile />} />
                 <Route path="/profileEdit" element={<ProfileEdit />} />
                 <Route path="/conexiones" element={<Conexiones />} />
                 <Route path="/conexiones/:id" element={<Conexiones />} />
@@ -140,6 +143,7 @@ function App() {
                 <Route path="/chat" element={<Chat />} />
                 <Route path="/chat/:id" element={<Chat />} />
                 <Route path="/servidores" element={<Servidores />} />
+                <Route path="/comentarios/:id" element={<PaginaComentarios />} />
             </Routes>
             </div>
         </>

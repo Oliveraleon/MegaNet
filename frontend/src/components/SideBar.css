@@ -57,7 +57,6 @@
     background: #f0f2f5;
 }
 
-/* ¡IMPORTANTE: Esto limita el tamaño para que no queden gigantes! */
 .sidebar-icon {
     font-size: 20px; 
     width: 30px;
@@ -82,7 +81,6 @@
     opacity: 1;
 }
 
-/* Esto obliga a que los iconos de imagen dentro del span se achiquen */
 .sidebar-icon img {
     width: 24px;
     height: 24px;

@@ -4,6 +4,7 @@ const Comentarios = require("../models/Comentarios.models.js");
 const Publicaciones = require("../models/Publicaciones.models.js");
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
+const { notificar } = require("../utilities/utilidades.js");
 
 const JWT_SECRET = "clave_secreta_meganet";
 
@@ -60,7 +61,7 @@ const login = async (req, res) => {
         }
 
         const token = jwt.sign(
-            { id: user.id, email: user.email},
+            { id: user.id, email: user.email, rol: user.rol },
             JWT_SECRET,
             { expiresIn: "2h" }
         );
@@ -72,13 +73,16 @@ const login = async (req, res) => {
                 id: user.id,
                 email: user.email,
                 username: user.username,
+                description: user.description,
+                profilePicture: user.profilePicture,
+                profileBanner: user.profileBanner,
+                rol: user.rol
             },
         });
     } catch (error) {
         res.status(500).json({ message: "Error logging in", error: error.message });
     }
 };
-// ---------- Publicaciones, likes y comentarios ----------
 
 const crearPublicacion = async (req, res) => {
     try {
@@ -92,7 +96,6 @@ const crearPublicacion = async (req, res) => {
             return res.status(400).json({ message: "El texto es muy largo (maximo 255 caracteres)" });
         }
 
-        // El autor sale del token, nunca del body
         await Publicaciones.create({
             content: content.trim(),
             multimedia: multimedia || null,
@@ -111,20 +114,26 @@ const editarPublicacion = async (req, res) => {
         if (!post) {
             return res.status(404).json({ message: "La publicacion no existe" });
         }
-        // Solo el dueño puede editar
         if (post.userId !== req.usuario.id) {
             return res.status(403).json({ message: "Solo podes editar tus propias publicaciones" });
         }
 
-        const { content } = req.body;
-        if (!content || content.trim() === "") {
-            return res.status(400).json({ message: "El texto no puede quedar vacio" });
+        const { content, privacy } = req.body;
+        if (content !== undefined) {
+            if (content.trim() === "" && !post.multimedia) {
+                return res.status(400).json({ message: "El texto no puede quedar vacio" });
+            }
+            if (content.length > 255) {
+                return res.status(400).json({ message: "El texto es muy largo (maximo 255 caracteres)" });
+            }
+            post.content = content.trim();
         }
-        if (content.length > 255) {
-            return res.status(400).json({ message: "El texto es muy largo (maximo 255 caracteres)" });
+        if (privacy !== undefined) {
+            if (!["public", "friends", "private"].includes(privacy)) {
+                return res.status(400).json({ message: "Privacidad no valida" });
+            }
+            post.privacy = privacy;
         }
-
-        post.content = content.trim();
         await post.save();
         res.status(200).json({ message: "Publicacion editada" });
     } catch (error) {
@@ -138,8 +147,9 @@ const eliminarPublicacion = async (req, res) => {
         if (!post) {
             return res.status(404).json({ message: "La publicacion no existe" });
         }
-        // Solo el dueño puede eliminar
-        if (post.userId !== req.usuario.id) {
+        const esDueño = Number(post.userId) === Number(req.usuario.id);
+        const esAdmin = req.usuario.rol === "admin";
+        if (!esDueño && !esAdmin) {
             return res.status(403).json({ message: "Solo podes eliminar tus propias publicaciones" });
         }
 
@@ -193,7 +203,7 @@ const getComentarios = async (req, res) => {
     try {
         const comentarios = await Comentarios.findAll({
             where: { postId: req.params.id },
-            include: [{ model: User, as: "autor", attributes: ["id", "username"] }],
+            include: [{ model: User, as: "autor", attributes: ["id", "username", "profilePicture"] }],
             order: [["creationDate", "ASC"]],
         });
         res.status(200).json(comentarios);
@@ -208,7 +218,6 @@ const crearComentario = async (req, res) => {
         if (!post) {
             return res.status(404).json({ message: "La publicacion no existe" });
         }
-
         const { text } = req.body;
         if (!text || text.trim() === "") {
             return res.status(400).json({ message: "El comentario no puede estar vacio" });
@@ -217,15 +226,39 @@ const crearComentario = async (req, res) => {
             return res.status(400).json({ message: "El comentario es muy largo (maximo 255 caracteres)" });
         }
 
-        await Comentarios.create({ text: text.trim(), postId: post.id, userId: req.usuario.id });
-        res.status(201).json({ message: "Comentario creado" });
+        const nuevoComentario = await Comentarios.create({ 
+            text: text.trim(), 
+            postId: post.id, 
+            userId: req.usuario.id });
+        if (post.userId !== req.usuario.id) {
+            const autor = await User.findByPk(req.usuario.id);
+            await notificar(post.userId, "💭 @" + autor.username + " comentó tu publicación", "/comentarios/" + post.id);
+        }
+        const comentarioConAutor = await Comentarios.findByPk(nuevoComentario.id,{
+            include: [{ model: User, as: "autor", attributes: ["id", "username", "profilePicture"] }]
+        });
+        res.status(201).json({ message: "Comentario creado", comentario: comentarioConAutor });
     } catch (error) {
         res.status(500).json({ message: "Error al comentar", error: error.message });
     }
 };
 
+const eliminarComentario = async (req, res) => {
+    try{
+        const comentario = await Comentarios.findByPk(req.params.comentarioId);
+        if(!comentario){
+            return res.status(404).json({message: "El comentario no existe"});
+        }
+        if (comentario.userId !== req.usuario.id) {
+            return res.status(403).json({ message: "No se puede eliminar comentarios de otros usuarios" });
+        }
+        await comentario.destroy();
+        res.status(200).json({message: "Comentario eliminado"});
+    }catch(error){
+        res.status(500).json({message: "Error al eliminar el comentario", error: error.message});
+    }
+}
 
-// A cada publicacion le agrega: cantidad de likes, si yo di like y cantidad de comentarios
 const agregarDatos = async (posts, userId) => {
     const lista = [];
     for (const p of posts) {
@@ -234,7 +267,7 @@ const agregarDatos = async (posts, userId) => {
         post.cantidadComentarios = await Comentarios.count({ where: { postId: p.id } });
         post.liked = false;
         if (userId) {
-            const miLike = await Reacciones.findOne({ where: { postId: p.id, userId: userId } });
+            const miLike = await Reacciones.findOne({ where: { postId: p.id, userId: userId, type: "like" } });
             post.liked = miLike !== null;
         }
         lista.push(post);
@@ -253,5 +286,6 @@ module.exports = {
     getComentarios,
     crearComentario,
     agregarDatos,
+    eliminarComentario,
     JWT_SECRET
 };
