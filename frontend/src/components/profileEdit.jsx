@@ -4,6 +4,8 @@ import { obtenerPerfil, actualizarPerfil, eliminarCuenta} from "../api/auth";
 import { useNavigate } from "react-router-dom";
 import "./Profile.css";
 
+const API_URL = "http://localhost:3000";
+
 function EditProfile() {
     const [formData, setFormData] = useState({
         username: "",
@@ -11,6 +13,10 @@ function EditProfile() {
     });
     const navigate = useNavigate();
     const [mostrarMenuEliminar, setMostrarMenuEliminar] = useState(false);
+    const [previewProfile, setPreviewProfile] = useState("");
+    const [previewBanner, setPreviewBanner] = useState("");
+    const [quitarFotoPerfil, setQuitarFotoPerfil] = useState(false);
+    const [quitarBanner, setQuitarBanner] = useState(false);
     const fileInputProfileRef = useRef(null)
     const fileInputBannerRef = useRef(null)
 
@@ -25,6 +31,12 @@ function EditProfile() {
                     profilePicture: usuario.profilePicture || "",
                     profileBanner: usuario.profileBanner || ""
                 });
+                if (usuario.profilePicture) {
+                    setPreviewProfile(`${API_URL}/${usuario.profilePicture}`);
+                }
+                if (usuario.profileBanner) {
+                    setPreviewBanner(`${API_URL}/${usuario.profileBanner}`);
+                }
             } catch (error) {
                 console.error("No se pudo cargar el perfil para editar", error);
             }
@@ -41,9 +53,19 @@ function EditProfile() {
 
     const handleFileChange = (e) =>{
         const file = e.target.files[0];
+        const fieldName = e.target.name;
+        if (!file) return;
         if (file && !file.type.startsWith("image/")){
             alert("Selecciona un archivo de imagen válido");
             e.target.value = "";
+            return;
+        }
+        const objectUrl = URL.createObjectURL(file);
+        if (fieldName === "profilePicture"){
+            setPreviewProfile(objectUrl);
+            
+        }else if (fieldName === "profileBanner"){
+            setPreviewBanner(objectUrl);
         }
     };
 
@@ -61,6 +83,12 @@ function EditProfile() {
             const dataForm = new FormData();
             dataForm.append("username", formData.username);
             dataForm.append("description", formData.description);
+            if (quitarFotoPerfil) {
+            dataForm.append("removeProfilePicture", "true");
+            }
+            if (quitarBanner) {
+            dataForm.append("removeProfileBanner", "true");
+            }
             if(fileInputProfileRef.current && fileInputProfileRef.current.files[0]){
                 dataForm.append("profilePicture", fileInputProfileRef.current.files[0]);
             }
@@ -122,6 +150,11 @@ function EditProfile() {
                 </label>
                 <label>
                     Foto de perfil:
+                    {previewProfile && (
+                        <div style={{ width: "70px", height: "70px", borderRadius: "50%", overflow: "hidden", border: "2px solid #ddd" }}>
+                            <img src={previewProfile} alt="Preview Perfil" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        </div>
+                    )}
                     <input 
                         type="file" 
                         name="profilePicture" 
@@ -130,9 +163,24 @@ function EditProfile() {
                         onChange={handleFileChange} 
                         style={{ width: "100%", padding: "8px", marginTop: "5px" }}
                     />
+                    <input
+                        type="button"
+                        value="Sacar foto de perfil"
+                        onClick={() => {
+                            setPreviewProfile("");
+                            setQuitarFotoPerfil(true);
+                            if (fileInputProfileRef.current) fileInputProfileRef.current.value = "";
+                        }}
+                        style={{ marginTop: "5px", background: "#f44336", color: "white", border: "none", padding: "5px 10px", cursor: "pointer" }}
+                    />  
                 </label>
                 <label>
                     Banner:
+                    {previewBanner && (
+                        <div style={{ width: "100%", height: "150px", overflow: "hidden", border: "2px solid #ddd" }}>
+                            <img src={previewBanner} alt="Preview Banner" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        </div>
+                    )}
                     <input 
                         type="file" 
                         name="profileBanner" 
@@ -141,6 +189,16 @@ function EditProfile() {
                         onChange={handleFileChange} 
                         style={{ width: "100%", padding: "8px", marginTop: "5px" }}
                     />
+                    <input
+                        type="button"
+                        value="Sacar banner"
+                        onClick={() => {
+                            setPreviewBanner("");
+                            setQuitarBanner(true);
+                            if (fileInputBannerRef.current) fileInputBannerRef.current.value = "";
+                        }}
+                        style={{ marginTop: "5px", background: "#f44336", color: "white", border: "none", padding: "5px 10px", cursor: "pointer" }}
+                    /> 
                 </label>
                 <label>
                     <Link to="/passwordChange">Cambiar contraseña</Link>

@@ -1,19 +1,13 @@
-const User = require("../models/Usuarios.models.js");
-const Mensajes = require("../models/Mensajes.models.js");
-const Grupos = require("../models/Grupos.models.js");
-const MiembrosGrupo = require("../models/MiembrosGrupo.models.js");
-const Servidores = require("../models/Servidores.models.js");
-const MiembrosServidor = require("../models/MiembrosServidor.models.js");
-const Canales = require("../models/Canales.models.js");
+const { Usuarios, Mensajes, Grupos, MiembrosGrupo, Servidores, MiembrosServidor, Canales} = require("../models");
 const { obtenerContactos, esMiembroGrupo, buscarMiembroServidor, textoValido } = require("../utilities/utilidades.js");
 
-const incluirAutor = [{ model: User, as: "autor", attributes: ["id", "username", "profilePicture"] }];
-const incluirUsuario = [{ model: User, as: "usuario", attributes: ["id", "username", "profilePicture"] }];
+const incluirAutor = [{ model: Usuarios, as: "autor", attributes: ["id", "username", "profilePicture"] }];
+const incluirUsuario = [{ model: Usuarios, as: "usuario", attributes: ["id", "username", "profilePicture"] }];
 
 const getContactos = async (req, res) => {
     try {
         const ids = await obtenerContactos(req.usuario.id);
-        const usuarios = await User.findAll({
+        const usuarios = await Usuarios.findAll({
             where: { id: ids },
             attributes: ["id", "username", "profilePicture"],
         });

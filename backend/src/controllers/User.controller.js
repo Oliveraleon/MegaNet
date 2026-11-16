@@ -1,21 +1,17 @@
 const { Op } = require("sequelize");
-const User = require("../models/Usuarios.models.js");
-const Publicaciones = require("../models/Publicaciones.models.js");
-const Seguidores = require("../models/Seguidores.models.js");
-const Amistades = require("../models/Amistades.models.js");
+const { Usuarios, Publicaciones, Seguidores, Amistades } = require("../models");
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 const nodemailer = require('nodemailer')
-const { agregarDatos } = require("./Auth.controller.js");
+const { agregarDatos } = require("./Post.controller.js");
 const { obtenerSeguidos, obtenerSeguidoresIds, obtenerAmigos, buscarAmistad, agregarRelacion } = require("../utilities/utilidades.js");
     
 const JWT_SECRET = "clave_secreta_meganet";
 
-
 const obtenerPerfil = async (req, res)=> {
     try{
         const userId = req.user.id;
-        const user = await User.findByPk(userId, {
+        const user = await Usuarios.findByPk(userId, {
             attributes: { exclude: ['password']}
         });
         if(!user){
@@ -30,21 +26,28 @@ const obtenerPerfil = async (req, res)=> {
 const actualizarPerfil = async (req, res) => {
     try {
         const userId = req.user.id;
-        const {username,description,profilePicture,profileBanner} = req.body;
-        const user = await User.findByPk(userId);
+        const { username, description, removeProfilePicture, removeProfileBanner } = req.body;
+        const user = await Usuarios.findByPk(userId);
         if (!user){
-            return res.status(404).json({message: "Usuario no encontrado"});
+            return res.status(404).json({ message: "Usuario no encontrado" });
         }
         if (username !== undefined) {
             const usernameLimpio = username.trim();
-            if (!usernameLimpio) {return res.status(400).json({message: "El nombre de usuario no puede estar vacío"});
+            if (!usernameLimpio) {
+                return res.status(400).json({ message: "El nombre de usuario no puede estar vacío" });
             }
             user.username = usernameLimpio;
         }
         if (description !== undefined) {
             user.description = description;
         }
-        if(req.files){
+        if (removeProfilePicture === "true") {
+            user.profilePicture = null;
+        }
+        if (removeProfileBanner === "true") {
+            user.profileBanner = null;
+        }
+        if (req.files) {
             if (req.files.profilePicture && req.files.profilePicture[0]){
                 user.profilePicture = `uploads/${req.files.profilePicture[0].filename}`;
             }
@@ -86,9 +89,11 @@ const getFeed = async (req, res) => {
     try {
         const incluirAutor = [
             {
-                model: User,
+                model: Usuarios,
                 as: "autor",
-                attributes: ["id", "username", "profilePicture"]
+                attributes: ["id", "username", "profilePicture", "privacidad"],
+                where: { privacidad: "publico" },
+                required: true
             }
         ];
 
@@ -104,7 +109,6 @@ const getFeed = async (req, res) => {
                 posts: await agregarDatos(posts, null)
             });
         }
-
         const seguidos = await obtenerSeguidos(req.usuario.id);
 
         const posts = await Publicaciones.findAll({
@@ -130,7 +134,7 @@ const getFeed = async (req, res) => {
 
 const getUsuarios = async (req, res) => {
     try {
-        const todos = await User.findAll({ attributes: ["id", "username", "profilePicture"] });
+        const todos = await Usuarios.findAll({ attributes: ["id", "username", "profilePicture"] });
         const usuarios = [];
         
         for (let i = 0; i < todos.length; i++) {
@@ -153,7 +157,8 @@ const seguir = async (req, res) => {
             return res.status(400).json({ message: "No podes seguirte a vos mismo" });
         }
 
-        const otroUsuario = await User.findByPk(otroId);
+        const otroUsuario = await Usuarios.findByPk(otroId);
+
         if (!otroUsuario) {
             return res.status(404).json({ message: "El usuario no existe" });
         }
@@ -196,6 +201,7 @@ const getSeguidores = async (req, res) => {
             where: { id: ids },
             attributes: ["id", "username", "profilePicture"],
         });
+        }
         const seguidos = await obtenerSeguidos(req.usuario.id);
         res.status(200).json({ usuarios, seguidos });
     } catch (error) {
@@ -207,7 +213,7 @@ const getSiguiendo = async (req, res) => {
     try {
         const targetUserId = req.params.id || req.usuario.id;
         const seguidos = await obtenerSeguidos(targetUserId);
-        const usuarios = await User.findAll({
+        const usuarios = await Usuarios.findAll({
             where: { id: seguidos },
             attributes: ["id", "username", "profilePicture"],
         });
@@ -223,7 +229,7 @@ const buscarUser = async (req,res)=>{
         if(!termino){
             return res.status(200).json([])
         }
-        const usuariosEncontrados = await User.findAll({
+        const usuariosEncontrados = await Usuarios.findAll({
             where:{
                 username:{
                     [Op.like]: `%${termino}%`
@@ -243,7 +249,7 @@ const buscarUser = async (req,res)=>{
 const obtenerUserPorId = async (req,res) =>{
     try{
         const { id } = req.params;
-        const user = await User.findByPk(id,{
+        const user = await Usuarios.findByPk(id,{
             attributes: {exclude: ["password"]}
         });
         if(!user){
@@ -260,7 +266,7 @@ const actualizarContraseña = async (req,res)=>{
     try{
         const userId = req.user.id;
         const {passwordActual, nuevaPassword} = req.body;
-        const user = await User.findByPk(userId);
+        const user = await Usuarios.findByPk(userId);
         if(!user){
             return res.status(404).json({message:"Usuario no encontrado"});
         }
@@ -281,7 +287,7 @@ const actualizarContraseña = async (req,res)=>{
 const eliminarCuenta = async (req,res)=>{
     try{
         const userId = req.user.id;
-        const user = await User.findByPk(userId);
+        const user = await Usuarios.findByPk(userId);
         if(!user){
             return res.status(404).json({message:"Usuario no encontrado"})
         }
@@ -305,7 +311,7 @@ const eliminarCuenta = async (req,res)=>{
 const recuperarCuenta = async (req,res)=>{
     try{
         const {email} = req.body;
-        const user = await User.findOne({where:{email}})
+        const user = await Usuarios.findOne({where:{email}})
         if(!user){
             return res.status(404).json({message:"Usuario no encontrado"})
         }
@@ -350,7 +356,7 @@ const reiniciarContraseña = async (req,res)=>{
             return res.status(400).json({ message: "Faltan datos obligatorios" });
         }
         const decoded = jwt.verify(token, JWT_SECRET);
-        const user = await User.findByPk(decoded.id);
+        const user = await Usuarios.findByPk(decoded.id);
         if(!user){
             return res.status(404).json({message:"Usuario no encontrado"})
         }
@@ -423,7 +429,7 @@ const enviarSolicitud = async (req, res) => {
             return res.status(400).json({ message: "No podes enviarte una solicitud a vos mismo" });
         }
 
-        const otroUsuario = await User.findByPk(otroId);
+        const otroUsuario = await Usuarios.findByPk(otroId);
         if (!otroUsuario) {
             return res.status(404).json({ message: "El usuario no existe" });
         }
@@ -483,10 +489,13 @@ const eliminarAmistad = async (req, res) => {
 const getAmigos = async (req, res) => {
     try {
         const ids = await obtenerAmigos(req.usuario.id);
-        const usuarios = await User.findAll({
+        let usuarios = [];
+        if (ids && ids.length > 0) {
+            usuarios = await Usuarios.findAll({
             where: { id: ids },
             attributes: ["id", "username", "profilePicture"],
         });
+        }
         res.status(200).json({ usuarios });
     } catch (error) {
         res.status(500).json({ message: "Error al obtener los amigos", error: error.message });
@@ -502,10 +511,13 @@ const getSolicitudes = async (req, res) => {
         for (let i = 0; i < solicitudes.length; i++) {
             ids.push(solicitudes[i].senderId);
         }
-        const usuarios = await User.findAll({
+        let usuarios = [];
+        if (ids.length > 0) {
+            usuarios = await Usuarios.findAll({
             where: { id: ids },
             attributes: ["id", "username", "profilePicture"],
         });
+        }
         res.status(200).json({ usuarios });
     } catch (error) {
         res.status(500).json({ message: "Error al obtener las solicitudes", error: error.message });

@@ -1,11 +1,8 @@
-const User = require("../models/Usuarios.models.js");
-const Publicaciones = require("../models/Publicaciones.models.js");
-const Comentarios = require("../models/Comentarios.models.js");
-const Reacciones = require("../models/Reacciones.models.js");
+const { Publicaciones, Reacciones, Comentarios, Usuarios} = require("../models");
 
 const obtenerTodosLosUsuarios = async (req, res) => {
     try {
-        const usuarios = await User.findAll({
+        const usuarios = await Usuarios.findAll({
             attributes: { exclude: ["password"] }
         });
         res.status(200).json(usuarios);
