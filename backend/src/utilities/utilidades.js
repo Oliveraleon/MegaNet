@@ -7,7 +7,8 @@ const obtenerSeguidos = async (userId) => {
     const relaciones = await Seguidores.findAll({ 
         where: 
         { 
-            followerId: userId 
+            followerId: userId,
+            status: "aceptado"
         } 
     });
     
@@ -20,7 +21,7 @@ const obtenerSeguidos = async (userId) => {
 
 
 const obtenerSeguidoresIds = async (userId) => {
-    const relaciones = await Seguidores.findAll({ where: { followedId: userId } });
+    const relaciones = await Seguidores.findAll({ where: { followedId: userId, status: "aceptado" } });
     const ids = [];
     for (let i = 0; i < relaciones.length; i++) {
         ids.push(relaciones[i].followerId);

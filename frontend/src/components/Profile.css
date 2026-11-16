@@ -11,7 +11,6 @@
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
 }
 
-
 .profile-layout {
     display: flex;
     width: 100vw;
@@ -25,7 +24,7 @@
 
 .profile-top {
     flex: 0 0 auto; 
-    padding: 40px 40px;
+    padding: 30px 40px;
     background-color: #ffffff; 
     border-bottom: 3px solid #000000; 
     display: flex;
@@ -47,13 +46,19 @@
     gap: 15px;
 }
 
-.profile-avatar {
+.profile-avatar-container {
     width: 120px;
     height: 120px;
     border-radius: 50%;
-    object-fit: cover;
-    object-position: center;
+    overflow: hidden;
     flex-shrink: 0;
+}
+
+.profile-avatar {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; 
+    object-position: center;
 }
 
 .profile-user-details {
@@ -73,7 +78,7 @@
     margin: 0;
     font-size: 1.2rem; 
     font-weight: 700;
-    color: #111111;   
+    color: #111111;    
 }
 
 .profile-stats {
@@ -91,15 +96,18 @@
 .profile-description {
     font-size: 0.95rem;
     color: #444;
-    margin: 10px 0;
+    margin: 5px 0;
     line-height: 1.4;
+    word-break: break-word;     
+    overflow-wrap: break-word;  
+    white-space: pre-wrap;      
 }
 
 .edit-profile-btn {
     padding: 6px 14px;
-    font-size: 0.85rem;     
+    font-size: 0.85rem;      
     font-weight: 600;
-    color: #000000;         
+    color: #000000;           
     background-color: #f0f2f5; 
     border: 1px solid #ccc;
     border-radius: 8px;
@@ -112,28 +120,58 @@
     background-color: #e4e6eb; 
 }
 
-.profile-description {
-    word-break: break-word;     
-    overflow-wrap: break-word;  
-    max-width: 50%;            
-    white-space: pre-wrap;      
-}
-.edit-profile-btn:hover {
-    background-color: #e4e6eb;
-}
-
-.profile-avatar-container {
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
-    overflow: hidden;
+/* Estilos para el contenedor de botones de acción en el perfil */
+.perfil-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+    align-items: center;
 }
 
-.profile-avatar {
-    width: 100%;
-    height: 100%;
-    object-fit: cover; 
-    object-position: center;
+/* Estilos de los botones del FollowButton y acciones secundarias */
+.follow-btn, .small-btn {
+    padding: 6px 16px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 1px solid #dbdbdb;
+    background-color: #0095f6;
+    color: white;
+    transition: background-color 0.2s;
+}
+
+.follow-btn:hover, .small-btn:hover {
+    opacity: 0.9;
+}
+
+.follow-btn.following {
+    background-color: #efefef;
+    color: #262626;
+    border-color: #dbdbdb;
+}
+
+.follow-btn.pending {
+    background-color: #efefef;
+    color: #262626;
+    border-color: #dbdbdb;
+}
+
+.small-btn {
+    background-color: #f0f2f5;
+    color: #000;
+    border: 1px solid #ccc;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.small-btn.danger {
+    background-color: #ffebee;
+    color: #c62828;
+    border-color: #ef9a9a;
 }
 
 textarea {
@@ -236,11 +274,6 @@ textarea {
     font-weight: 600;
     font-size: 14px;
     color: #262626;
-}
-
-.post-date {
-    font-size: 11px;
-    color: #8e8e8e;
 }
 
 .post-header-link {

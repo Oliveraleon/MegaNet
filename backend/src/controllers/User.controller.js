@@ -26,7 +26,7 @@ const obtenerPerfil = async (req, res)=> {
 const actualizarPerfil = async (req, res) => {
     try {
         const userId = req.user.id;
-        const { username, description, removeProfilePicture, removeProfileBanner } = req.body;
+        const { username, description, privacidad,removeProfilePicture, removeProfileBanner } = req.body;
         const user = await Usuarios.findByPk(userId);
         if (!user){
             return res.status(404).json({ message: "Usuario no encontrado" });
@@ -40,6 +40,9 @@ const actualizarPerfil = async (req, res) => {
         }
         if (description !== undefined) {
             user.description = description;
+        }
+        if (privacidad !== undefined) {
+            user.privacidad = privacidad;
         }
         if (removeProfilePicture === "true") {
             user.profilePicture = null;
@@ -63,6 +66,7 @@ const actualizarPerfil = async (req, res) => {
                 username: user.username,
                 email: user.email,
                 description: user.description,
+                privacidad: user.privacidad,
                 profilePicture: user.profilePicture,
                 profileBanner: user.profileBanner,
                 followers: user.followers,
@@ -91,13 +95,13 @@ const getFeed = async (req, res) => {
             {
                 model: Usuarios,
                 as: "autor",
-                attributes: ["id", "username", "profilePicture", "privacidad"],
-                where: { privacidad: "publico" },
-                required: true
+                attributes: ["id", "username", "profilePicture"] // 👈 Sin "privacidad" acá
             }
         ];
 
-        if (!req.usuario) {
+        const usuarioActual = req.usuario || req.user;
+
+        if (!usuarioActual) {
             const posts = await Publicaciones.findAll({
                 where: { privacy: "public" },
                 include: incluirAutor,
@@ -109,7 +113,15 @@ const getFeed = async (req, res) => {
                 posts: await agregarDatos(posts, null)
             });
         }
-        const seguidos = await obtenerSeguidos(req.usuario.id);
+
+        const seguidos = await obtenerSeguidos(usuarioActual.id);
+
+        if (!seguidos || seguidos.length === 0) {
+            return res.status(200).json({
+                tipo: "registrado",
+                posts: []
+            });
+        }
 
         const posts = await Publicaciones.findAll({
             where: {
@@ -119,7 +131,7 @@ const getFeed = async (req, res) => {
             order: [["creationDate", "DESC"]],
         });
 
-        const lista = await agregarDatos(posts, req.usuario.id);
+        const lista = await agregarDatos(posts, usuarioActual.id);
 
         return res.status(200).json({
             tipo: "registrado",
@@ -163,13 +175,30 @@ const seguir = async (req, res) => {
             return res.status(404).json({ message: "El usuario no existe" });
         }
 
-        const yaLoSigue = await Seguidores.findOne({
+        const esPrivado = otroUsuario.privacidad === "privado" || otroUsuario.privacidad === "privada";
+        const estadoInicial = esPrivado ? "pendiente" : "aceptado"
+
+        let seguimiento = await Seguidores.findOne({
             where: { followerId: req.usuario.id, followedId: otroId },
         });
-        if (!yaLoSigue) {
-            await Seguidores.create({ followerId: req.usuario.id, followedId: otroId });
+
+
+        if (!seguimiento) {
+            seguimiento = await Seguidores.create({ 
+                followerId: req.usuario.id, 
+                followedId: otroId, 
+                status: estadoInicial 
+            });
+        } else {
+            seguimiento.status = estadoInicial;
+            await seguimiento.save();
         }
-        res.status(201).json({ message: "Ahora seguis a " + otroUsuario.username });
+
+        const mensaje = estadoInicial === "pendiente" 
+            ? "Solicitud de seguimiento enviada a " + otroUsuario.username 
+            : "Ahora seguis a " + otroUsuario.username;
+
+        res.status(201).json({ message: mensaje, estado: estadoInicial });
     } catch (error) {
         res.status(500).json({ message: "Error al seguir"});
     }
@@ -190,23 +219,23 @@ const dejarDeSeguir = async (req, res) => {
 const getSeguidores = async (req, res) => {
     try {
         const targetUserId = req.params.id || req.usuario.id;
-        const relaciones = await Seguidores.findAll({ where: { followedId: targetUserId } });
+        const relaciones = await Seguidores.findAll({ where: { followedId: targetUserId, status:"aceptado" } });
         const ids = [];
         
         for (let i = 0; i < relaciones.length; i++) {
             ids.push(relaciones[i].followerId);
         }
         
-        const usuarios = await User.findAll({
+        const usuarios = await Usuarios.findAll({
             where: { id: ids },
             attributes: ["id", "username", "profilePicture"],
         });
-        }
         const seguidos = await obtenerSeguidos(req.usuario.id);
         res.status(200).json({ usuarios, seguidos });
     } catch (error) {
         res.status(500).json({ message: "Error al obtener seguidores"});
     }
+
 };
 
 const getSiguiendo = async (req, res) => {
@@ -374,18 +403,47 @@ const reiniciarContraseña = async (req,res)=>{
 const verPerfil = async (req, res) => {
     try {
         const otroId = Number(req.params.id);
-        const usuario = await User.findByPk(otroId, {
-            attributes: ["id", "username", "description", "profilePicture", "profileBanner"],
+        
+        // 1. Traemos al usuario incluyendo su campo "privacidad"
+        const usuario = await Usuarios.findByPk(otroId, {
+            attributes: ["id", "username", "description", "profilePicture", "profileBanner", "privacidad"],
         });
         if (!usuario) {
             return res.status(404).json({ message: "El usuario no existe" });
         }
 
-
+        const esDueño = otroId === req.usuario.id;
         const misSeguidos = await obtenerSeguidos(req.usuario.id);
         const misSeguidores = await obtenerSeguidoresIds(req.usuario.id);
         const susSeguidos = await obtenerSeguidos(otroId);
         const susSeguidores = await obtenerSeguidoresIds(otroId);
+
+        // 2. Buscamos el estado exacto del seguimiento (en ambas direcciones)
+        let estadoSeguimiento = "ninguna";
+
+        // ¿Lo sigo yo a él o le envié solicitud?
+        const seguimientoEnviado = await Seguidores.findOne({
+            where: { followerId: req.usuario.id, followedId: otroId }
+        });
+
+        // ¿Me sigue él a mí o me envió solicitud a mí?
+        const seguimientoRecibido = await Seguidores.findOne({
+            where: { followerId: otroId, followedId: req.usuario.id }
+        });
+
+        if (seguimientoEnviado) {
+            estadoSeguimiento = seguimientoEnviado.status; // "aceptado" o "pendiente" (lo que vos le enviaste)
+        } else if (seguimientoRecibido && seguimientoRecibido.status === "pendiente") {
+            estadoSeguimiento = "recibida"; // 👈 ¡Acá detectamos que él te envió una solicitud a vos!
+        } else if (seguimientoRecibido && seguimientoRecibido.status === "aceptado") {
+            estadoSeguimiento = "aceptado"; 
+        }
+
+        const loSigoReal = seguimientoEnviado?.status === "aceptado";
+
+        // 3. Verificamos si tiene acceso a ver los posts
+        const esPrivado = usuario.privacidad === "privado" || usuario.privacidad === "privada";
+        const tieneAcceso = !esPrivado || esDueño || loSigoReal || (seguimientoRecibido?.status === "aceptado");
 
         let amistad = "ninguna";
         const relacion = await buscarAmistad(req.usuario.id, otroId);
@@ -403,21 +461,29 @@ const verPerfil = async (req, res) => {
         if (amistad === "amigos") {
             privacidad.push("friends");
         }
-        const publicaciones = await Publicaciones.findAll({
-            where: { userId: otroId, privacy: privacidad },
-            order: [["creationDate", "DESC"]],
-        });
-        const publicacionesConDatos = await agregarDatos(publicaciones, req.usuario.id);
+
+        let publicacionesConDatos = [];
+        if (tieneAcceso) {
+            const publicaciones = await Publicaciones.findAll({
+                where: { userId: otroId, privacy: privacidad },
+                order: [["creationDate", "DESC"]],
+            });
+            publicacionesConDatos = await agregarDatos(publicaciones, req.usuario.id);
+        }
+
         res.status(200).json({
             usuario,
-            loSigo: misSeguidos.includes(otroId),
+            loSigo: loSigoReal,
             meSigue: misSeguidores.includes(otroId),
+            estadoSeguimiento, // Ahora devolverá "recibida" si él te mandó solicitud
             seguidores: susSeguidores.length,
             seguidos: susSeguidos.length,
             amistad,
             publicaciones: publicacionesConDatos,
+            esPrivadoBloqueado: !tieneAcceso
         });
     } catch (error) {
+        console.error("Error al obtener perfil:", error);
         res.status(500).json({ message: "Error al obtener el perfil", error: error.message });
     }
 };
@@ -524,6 +590,63 @@ const getSolicitudes = async (req, res) => {
     }
 };
 
+const aceptarSolicitudPrivada = async(req,res)=>{
+    try{
+        const otroId = Number(req.params.id);
+        const solicitud = await Seguidores.findOne({
+            where: { followerId: otroId, followedId: req.usuario.id, status: "pendiente" },
+        });
+        if(!solicitud){
+            return res.status(404).json({ message: "No hay una solicitud pendiente de esa persona" });
+        }
+        solicitud.status = "aceptado";
+        await solicitud.save();
+        res.status(200).json({ message: "Solicitud de seguimiento aceptada" });
+    }catch(error){
+        res.status(500).json({ message: "Error al aceptar la solicitud", error: error.message });
+    }
+};
+
+const getSolicitudesPrivadas = async (req, res) => {
+    try {
+        const solicitudes = await Seguidores.findAll({
+            where: { followedId: req.usuario.id, status: "pendiente" },
+        });
+        
+        const ids = [];
+        for (let i = 0; i < solicitudes.length; i++) {
+            ids.push(solicitudes[i].followerId);
+        }
+
+        let usuarios = [];
+        if (ids.length > 0) {
+            usuarios = await Usuarios.findAll({
+                where: { id: ids },
+                attributes: ["id", "username", "profilePicture"],
+            });
+        }
+        res.status(200).json({ usuarios });
+    } catch (error) {
+        res.status(500).json({ message: "Error al obtener las solicitudes de seguimiento", error: error.message });
+    }
+};
+
+const rechazarSolicitudPrivada = async(req,res)=>{
+    try{
+        const otroId = Number(req.params.id);
+        const solicitud = await Seguidores.findOne({
+            where: { followerId: otroId, followedId: req.usuario.id, status: "pendiente" },
+        });
+        if (!solicitud){
+            return res.status(404).json({ message: "No hay una solicitud pendiente de esa persona" });
+        }
+        await solicitud.destroy()
+        res.status(200).json({ message: "Solicitud de seguimiento rechazada" });
+    }catch(error){
+        res.status(500).json({ message: "Error al rechazar la solicitud", error: error.message });
+    }
+};
+
 module.exports = {
     obtenerPerfil,
     actualizarPerfil,
@@ -544,5 +667,8 @@ module.exports = {
     aceptarSolicitud,
     eliminarAmistad,
     getAmigos,
-    getSolicitudes
+    getSolicitudes,
+    aceptarSolicitudPrivada,
+    getSolicitudesPrivadas,
+    rechazarSolicitudPrivada
 };

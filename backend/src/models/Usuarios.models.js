@@ -42,6 +42,11 @@ const Usuarios = sequelize.define(
             type: DataTypes.ENUM("user", "admin"),
             allowNull: false,
             defaultValue: "user"
+        },
+        privacidad:{
+            type: DataTypes.STRING,
+            allowNull: false,
+            defaultValue: "publico"
         }
     },
     {

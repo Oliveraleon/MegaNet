@@ -9,7 +9,8 @@ const API_URL = "http://localhost:3000";
 function EditProfile() {
     const [formData, setFormData] = useState({
         username: "",
-        description: ""
+        description: "",
+        privacidad: "publico"
     });
     const navigate = useNavigate();
     const [mostrarMenuEliminar, setMostrarMenuEliminar] = useState(false);
@@ -28,6 +29,7 @@ function EditProfile() {
                 setFormData({
                     username: usuario.username || "",
                     description: usuario.description || "",
+                    privacidad: usuario.privacidad || "publico",
                     profilePicture: usuario.profilePicture || "",
                     profileBanner: usuario.profileBanner || ""
                 });
@@ -83,6 +85,7 @@ function EditProfile() {
             const dataForm = new FormData();
             dataForm.append("username", formData.username);
             dataForm.append("description", formData.description);
+            dataForm.append("privacidad", formData.privacidad);
             if (quitarFotoPerfil) {
             dataForm.append("removeProfilePicture", "true");
             }
@@ -147,6 +150,18 @@ function EditProfile() {
                     <span style={{fontSize: "12px", color: "#666", display: "block", textAlign: "right"}}>
                         {formData.description.length} / 250
                     </span>
+                </label>
+                <label>
+                    Privacidad de la cuenta
+                    <select
+                        name="privacidad"
+                        value={formData.privacidad}
+                        onChange={handleChange}
+                        style={{ width: "100%", padding: "8px", marginTop: "5px" }}
+                    >
+                        <option value="public">Pública (Cualquiera puede ver tus posts)</option>
+                        <option value="privado">Privada (Requiere aprobación de seguimiento)</option>
+                    </select>
                 </label>
                 <label>
                     Foto de perfil:

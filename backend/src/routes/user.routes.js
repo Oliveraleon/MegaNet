@@ -19,7 +19,10 @@ const {
     aceptarSolicitud, 
     eliminarAmistad, 
     getAmigos, 
-    getSolicitudes
+    getSolicitudes,
+    aceptarSolicitudPrivada,
+    getSolicitudesPrivadas,
+    rechazarSolicitudPrivada
 } = require("../controllers/User.controller.js");
 
 const { verificarToken, tokenOpcional } = require("../middelwares/Auth.middleware.js");
@@ -31,10 +34,18 @@ route.get("/profile", verificarToken, obtenerPerfil);
 route.patch("/profile", verificarToken, subirImagen, actualizarPerfil);
 route.get('/feed', tokenOpcional, getFeed);
 route.get('/usuarios', verificarToken, getUsuarios);
+
+// --- RUTAS DE SEGUIDORES (¡El orden estático va primero!) ---
 route.get('/seguidores/', verificarToken, getSeguidores);
-route.get('/seguidores/:id', verificarToken, getSeguidores);
+route.get('/seguidores/solicitudes', verificarToken, getSolicitudesPrivadas); // 👈 Movida arriba
+route.post('/seguidores/:id/aceptar', verificarToken, aceptarSolicitudPrivada);
+route.get('/seguidores/:id', verificarToken, getSeguidores); // 👈 Movida abajo
+route.delete('/seguidores/:id/rechazar', verificarToken, rechazarSolicitudPrivada);
+
+// --- RUTAS DE SIGUIENDO ---
 route.get('/siguiendo/', verificarToken, getSiguiendo);
 route.get('/siguiendo/:id', verificarToken, getSiguiendo);
+
 route.post('/seguir/:id', verificarToken, seguir);
 route.delete('/seguir/:id', verificarToken, dejarDeSeguir);
 route.get("/buscar", verificarToken, buscarUser);
@@ -47,6 +58,7 @@ route.get('/solicitudes', verificarToken, getSolicitudes);
 route.post('/amistad/:id', verificarToken, enviarSolicitud);
 route.post('/amistad/:id/aceptar', verificarToken, aceptarSolicitud);
 route.delete('/amistad/:id', verificarToken, eliminarAmistad);
+
 route.get('/perfil/:id', verificarToken, verPerfil);
 route.get("/:id", verificarToken, obtenerUserPorId);
 

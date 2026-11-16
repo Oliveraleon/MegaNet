@@ -336,3 +336,67 @@ export const esAdmin = () => {
     const user = JSON.parse(localStorage.getItem("user"));
     return user && user.rol === "admin";
 };
+
+export async function obtenerSolicitudesSeguimiento() {
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) throw new Error("No se proporcionó un token válido");
+    
+    const res = await fetch("http://localhost:3000/user/seguidores/solicitudes", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      }
+    });
+    
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Error al obtener las solicitudes de seguimiento");
+    return data;
+  } catch (error) {
+    console.log("Error al obtener solicitudes de seguimiento", error);
+    throw error;
+  }
+}
+
+export async function aceptarSolicitudSeguimiento(id) {
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) throw new Error("No se proporcionó un token válido");
+
+    const res = await fetch(`http://localhost:3000/user/seguidores/${id}/aceptar`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      }
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Error al aceptar la solicitud de seguimiento");
+    return data;
+  } catch (error) {
+    console.log("Error al aceptar solicitud de seguimiento", error);
+    throw error;
+  }
+}
+
+export async function rechazarSolicitudPrivada(id){
+  try{
+    const token = localStorage.getItem("token");
+    if (!token) throw new Error("No se proporcionó un token válido");
+    const res = await fetch(`http://localhost:3000/user/seguidores/${id}/rechazar`,{
+      method : "DELETE",
+      headers:{
+        "Content-Type" : "application/json",
+        "Authorization": `Bearer ${token}`
+      }
+    });
+    const data = await res.json();
+    if(!res.ok) throw new Error (data.message || "Error al rechazar la solicitud de seguimiento");
+    return data
+  }catch(error){
+    console.log("Error al rechazar la solicitud de seguimiento", error);
+    throw error;
+  }
+}
