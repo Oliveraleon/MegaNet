@@ -45,7 +45,7 @@ function MenuPost({ post, esMio, puedeBorrar, onBorrar, onCambio }) {
     const [error, setError] = useState("")
 
     const postId = post.id || post.id_publicacion
-    const url = "http://localhost:3000/auth/publicaciones/" + postId
+    const url = "http://localhost:3000/posts/publicaciones/" + postId
     const token = localStorage.getItem("token")
     const config = { headers: { Authorization: "Bearer " + token } }
 

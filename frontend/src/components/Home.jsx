@@ -62,10 +62,6 @@ function Home() {
         }
     }, [])
 
-    if (!estaLogueado()) {
-        return <Navigate to="/login" replace />
-    }
-
     const iniciarEliminacionPost = (postId) => {
         setPostAEliminar(postId)
         setMenuPostAbiertoId(null)
@@ -76,7 +72,7 @@ function Home() {
 
         try {
             const token = localStorage.getItem("token")
-            const res = await fetch(`${API_URL}/auth/publicaciones/${postAEliminar}`, {
+            const res = await fetch(`${API_URL}/posts/publicaciones/${postAEliminar}`, {
                 method: "DELETE",
                 headers: { "Authorization": `Bearer ${token}` }
             })

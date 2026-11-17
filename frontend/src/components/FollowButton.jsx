@@ -3,27 +3,31 @@ import { useNavigate } from "react-router-dom"
 import axios from "axios"
 import { estaLogueado } from "../api/auth"
 
-function FollowButton({ userId, username, siguiendoInicial, onChange }) {
-    const [siguiendo, setSiguiendo] = useState(siguiendoInicial)
+function FollowButton({ userId, username, estadoInicial = "ninguno", onChange }) {
+    console.log("Estado inicial recibido:", estadoInicial);
+    const [estado, setEstado] = useState(estadoInicial)
     const [paso, setPaso] = useState("")
-    const navigate = useNavigate()
-
+    const useNavigateInstance = useNavigate() // o navigate
 
     useEffect(() => {
-        setSiguiendo(siguiendoInicial)
-    }, [siguiendoInicial])
+        setEstado(estadoInicial)
+    }, [estadoInicial])
 
     const seguir = async () => {
         if (!estaLogueado()) {
-            navigate("/login")
+            useNavigateInstance("/login")
             return
         }
         try {
             const token = localStorage.getItem("token")
-            await axios.post("http://localhost:3000/user/seguir/" + userId, {}, {
+            const res = await axios.post("http://localhost:3000/user/seguir/" + userId, {}, {
                 headers: { Authorization: "Bearer " + token }
             })
-            setSiguiendo(true)
+            
+            // El backend nos devuelve el estado con el que quedó ("aceptado" o "pendiente")
+            const nuevoEstado = res.data.estado || "aceptado"
+            setEstado(nuevoEstado)
+            
             if (onChange) onChange()
         } catch (error) {
             alert("No se pudo seguir al usuario")
@@ -36,21 +40,30 @@ function FollowButton({ userId, username, siguiendoInicial, onChange }) {
             await axios.delete("http://localhost:3000/user/seguir/" + userId, {
                 headers: { Authorization: "Bearer " + token }
             })
-            setSiguiendo(false)
+            setEstado("ninguno")
             setPaso("")
-            onChange()
+            if (onChange) onChange()
         } catch (error) {
-            alert("No se pudo dejar de seguir")
+            alert("No se pudo dejar de seguir / cancelar solicitud")
         }
     }
 
     return (
         <>
-            {siguiendo ? (
+            {/* Renderizado condicional según el estado de la relación */}
+            {estado === "aceptado" && (
                 <button className="follow-btn following" onClick={() => setPaso("menu")}>
                     Siguiendo ▾
                 </button>
-            ) : (
+            )}
+
+            {estado === "pendiente" && (
+                <button className="follow-btn pending" onClick={() => setPaso("confirmar")}>
+                    Solicitud enviada
+                </button>
+            )}
+
+            {(estado === "ninguno" || estado === "ninguna") && (
                 <button className="follow-btn" onClick={seguir}>
                     Seguir
                 </button>
@@ -77,14 +90,23 @@ function FollowButton({ userId, username, siguiendoInicial, onChange }) {
 
                         {paso === "confirmar" && (
                             <div className="modal-confirm">
-                                <h3>¿Dejar de seguir a @{username}?</h3>
+                                <h3>
+                                    {estado === "pendiente" 
+                                        ? `¿Cancelar solicitud a @${username}?` 
+                                        : `¿Dejar de seguir a @${username}?`
+                                    }
+                                </h3>
                                 <p>
-                                    Dejarás de ver sus publicaciones en tu inicio. Si cambiás de
-                                    opinión, vas a tener que volver a seguirlo.
+                                    {estado === "pendiente"
+                                        ? "Se cancelará la solicitud de seguimiento enviada a este usuario."
+                                        : "Dejarás de ver sus publicaciones en tu inicio. Si cambiás de opinión, vas a tener que volver a seguirlo."
+                                    }
                                 </p>
                                 <div className="modal-actions">
                                     <button className="btn-cancel" onClick={() => setPaso("")}>Cancelar</button>
-                                    <button className="btn-danger" onClick={dejarDeSeguir}>Dejar de seguir</button>
+                                    <button className="btn-danger" onClick={dejarDeSeguir}>
+                                        {estado === "pendiente" ? "Cancelar solicitud" : "Dejar de seguir"}
+                                    </button>
                                 </div>
                             </div>
                         )}

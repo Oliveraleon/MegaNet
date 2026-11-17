@@ -72,7 +72,6 @@ function VentanaMensajes({ url, titulo, subtitulo, icono, miembros = [], accione
         e.preventDefault()
         if (texto.trim() === "" && !archivo) return
         try {
-            // Se manda como FormData porque puede llevar un archivo
             const formulario = new FormData()
             formulario.append("content", texto)
             if (archivo) formulario.append("archivo", archivo)

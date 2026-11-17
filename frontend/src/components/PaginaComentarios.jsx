@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { obtenerComentarios, crearComentario, eliminarComentario } from "../api/auth";
+import { obtenerComentarios, crearComentario, eliminarComentario, esAdmin, estaLogueado } from "../api/auth";
 
 function ComentariosPage() {
     const { id } = useParams();
@@ -8,12 +8,10 @@ function ComentariosPage() {
     const [comentarios, setComentarios] = useState([]);
     const [texto, setTexto] = useState("");
     const [loading, setLoading] = useState(true);
-
     const [menuAbiertoId, setMenuAbiertoId] = useState(null);
-
     const [comentarioAEliminar, setComentarioAEliminar] = useState(null);
-
     const usuarioLogueado = JSON.parse(localStorage.getItem("user"));
+    
 
     const cargarComentarios = async () => {
         try {
@@ -27,8 +25,12 @@ function ComentariosPage() {
     };
 
     useEffect(() => {
+        if (!estaLogueado()){
+            navigate("/login");
+            return;
+        }
         cargarComentarios();
-    }, [id]);
+    }, [id,navigate]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -78,7 +80,7 @@ function ComentariosPage() {
                 ) : comentarios.length > 0 ? (
                     comentarios.map((c) => {
                         const esMio = usuarioLogueado && (c.userId === usuarioLogueado.id || c.autor?.id === usuarioLogueado.id);
-
+                        const puedeBorrarComentario = esMio || esAdmin();
                         return (
                             <div key={c.id} style={{ background: "#f8f9fa", padding: "12px", borderRadius: "8px", border: "1px solid #eee", display: "flex", gap: "12px", alignItems: "flex-start", position: "relative" }}>
                                 <Link to={`/profile/${c.autor?.id}`}>
@@ -105,7 +107,7 @@ function ComentariosPage() {
                                     </p>
                                 </div>
 
-                                {esMio && (
+                                {puedeBorrarComentario && (
                                     <div style={{ position: "relative" }}>
                                         <button 
                                             onClick={() => setMenuAbiertoId(menuAbiertoId === c.id ? null : c.id)}

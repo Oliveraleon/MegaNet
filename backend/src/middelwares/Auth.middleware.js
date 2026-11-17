@@ -21,7 +21,9 @@ const tokenOpcional = (req, res, next) => {
     const header = req.headers.authorization;
     if (header && header.startsWith("Bearer ")) {
         try {
-            req.usuario = jwt.verify(header.split(" ")[1], JWT_SECRET);
+            const decoded = jwt.verify(header.split(" ")[1], JWT_SECRET);
+            req.usuario = decoded;
+            req.user = decoded;
         } catch (error) {
         }
     }

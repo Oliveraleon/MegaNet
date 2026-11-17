@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import { getUsuario, getUserPosts, estaLogueado, dejarDeSeguir, seguirUsuario, darLike, quitarLike, esAdmin } from "../api/auth"
+import { getUserPosts, estaLogueado, esAdmin, aceptarSolicitudSeguimiento, rechazarSolicitudPrivada, darLike, quitarLike } from "../api/auth"
 import { useNavigate, useParams, Link } from "react-router-dom"
 import axios from "axios"
 import "./Profile.css"
@@ -43,6 +43,24 @@ function Profile(){
         }
     }
 
+    const manejarAceptarSeguimiento = async () => {
+        try {
+            await aceptarSolicitudSeguimiento(id);
+            cargarDatosPerfil();
+        } catch (error) {
+            alert(error.message || "No se pudo aceptar la solicitud de seguimiento");
+        }
+    }
+
+    const rechazarSeguimiento = async () => {
+        try {
+            await rechazarSolicitudPrivada(id);
+            cargarDatosPerfil();
+        } catch (err) {
+            alert(err.message || "No se pudo rechazar la solicitud");
+        }
+    }
+
     const eliminarAmistad = async () => {
         if (datos?.amistad === "amigos" && !confirm("¿Querés eliminar a @" + datos.usuario.username + " de tus amigos?")) {
             return
@@ -79,7 +97,7 @@ function Profile(){
                 setDatos(null);
             }
 
-            const url = !idValido   
+            const url = !idValido    
                 ? "http://localhost:3000/user/profile" 
                 : `http://localhost:3000/user/${idValido}`;
 
@@ -135,20 +153,6 @@ function Profile(){
         cargarDatosPerfil();
     }, [id, navigate]);
 
-    const botonSeguir = async ()=>{
-        try{
-            if(loSigue){
-                await dejarDeSeguir(id);
-                setLoSigue(false);
-            }else{
-                await seguirUsuario(id);
-                setLoSigue(true);
-            }
-        }catch(error){
-            console.error("Error al actualizar los seguidos", error);
-        }
-    };
-
     const iniciarEliminacionPost = (postId) => {
         setPostAEliminar(postId);
         setMenuPostAbiertoId(null);
@@ -159,7 +163,7 @@ function Profile(){
 
         try {
             const token = localStorage.getItem("token");
-            const res = await fetch(`http://localhost:3000/auth/publicaciones/${postAEliminar}`, {
+            const res = await fetch(`http://localhost:3000/posts/publicaciones/${postAEliminar}`, {
                 method: "DELETE",
                 headers: { "Authorization": `Bearer ${token}` }
             });
@@ -242,12 +246,24 @@ function Profile(){
                     </button>
                 ) : (
                     <div className="perfil-actions" style={{ display: "flex", gap: "10px", marginTop: "15px", flexWrap: "wrap" }}>
+                        
                         <FollowButton
                             userId={id}
                             username={perfil?.username}
-                            siguiendoInicial={loSigue}
+                            estadoInicial={datos?.estadoSeguimiento ? datos.estadoSeguimiento : (loSigue ? "aceptado" : "ninguno")}
                             onChange={cargarDatosPerfil}
                         />
+
+                        {datos?.estadoSeguimiento === "recibida" && (
+                            <>
+                            <button className="small-btn" onClick={manejarAceptarSeguimiento}>
+                                Aceptar seguimiento
+                            </button>
+                            <button className="small-btn danger" onClick={rechazarSeguimiento}>
+                                Rechazar seguimiento
+                            </button>
+                            </>
+                        )}
 
                         {datos?.amistad === "ninguna" && (
                             <button className="small-btn" onClick={enviarSolicitud}>Agregar amigo</button>
@@ -272,155 +288,164 @@ function Profile(){
                 </div>
 
                 <div className="profile-bottom">
-                    {publicaciones.length > 0 ? (
-                        publicaciones.map((post) => {
-                            const postId = post.id || post.id_publicacion;
-                            const autorId = post.userId || perfil?.id;
-                            const esMiPost = usuarioLogueado && Number(autorId) === Number(usuarioLogueado?.id);
-                            const puedeBorrar = esMiPost || esAdmin();
+                    {datos?.esPrivadoBloqueado ? (
+                        <div style={{ textAlign: "center", padding: "3rem", background: "white", borderRadius: "12px", border: "1px solid #eaeaea", margin: "20px 0" }}>
+                            <h3>🔒 Esta cuenta es privada</h3>
+                            <p style={{ color: "#666", marginTop: "8px" }}>Seguí a @{perfil?.username} para ver sus fotos y publicaciones.</p>
+                        </div>
+                    ) : (
+                        <>
+                            {publicaciones.length > 0 ? (
+                                publicaciones.map((post) => {
+                                    const postId = post.id || post.id_publicacion;
+                                    const autorId = post.userId || perfil?.id;
+                                    const esMiPost = usuarioLogueado && Number(autorId) === Number(usuarioLogueado?.id);
+                                    const puedeBorrar = esMiPost || esAdmin();
 
-                            return (
-                                <div key={postId} className="post-card">
-                                    <div className="post-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                        <Link to={autorId ? `/profile/${autorId}` : "/profile"} className="post-header-link" style={{ display: "flex", alignItems: "center", gap: "12px", textDecoration: "none", color: "inherit" }}>
-                                            <img
-                                                src={perfil?.profilePicture ? `http://localhost:3000/${perfil.profilePicture}` : "/defaultProfile.png"}
-                                                alt="Foto de perfil"
-                                                className="post-avatar"
-                                                onError={(e)=>{
-                                                    e.currentTarget.onerror = null;
-                                                    e.currentTarget.src = "/defaultProfile.png";
-                                                }}
-                                            />
-                                            <div className="post-user-info" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                                                <span className="post-username">{perfil?.username || "Usuario"}</span>
-                                                <span className="post-date">
-                                                    {post.creationDate ? new Date(post.creationDate).toLocaleDateString() : ""}
-                                                </span>
-                                            </div>
-                                        </Link>
-
-                                        {puedeBorrar && (
-                                            <div style={{ position: "relative" }}>
-                                                <button 
-                                                    onClick={() => setMenuPostAbiertoId(menuPostAbiertoId === postId ? null : postId)}
-                                                    style={{ background: "transparent", border: "none", cursor: "pointer", padding: "4px" }}
-                                                >
-                                                    <img 
-                                                        src="/logoPuntos.png" 
-                                                        alt="Opciones" 
-                                                        style={{ width: "20px", height: "20px", objectFit: "contain" }} 
+                                    return (
+                                        <div key={postId} className="post-card">
+                                            <div className="post-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                                <Link to={autorId ? `/profile/${autorId}` : "/profile"} className="post-header-link" style={{ display: "flex", alignItems: "center", gap: "12px", textDecoration: "none", color: "inherit" }}>
+                                                    <img
+                                                        src={perfil?.profilePicture ? `http://localhost:3000/${perfil.profilePicture}` : "/defaultProfile.png"}
+                                                        alt="Foto de perfil"
+                                                        className="post-avatar"
+                                                        onError={(e)=>{
+                                                            e.currentTarget.onerror = null;
+                                                            e.currentTarget.src = "/defaultProfile.png";
+                                                        }}
                                                     />
-                                                </button>
+                                                    <div className="post-user-info" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                                                        <span className="post-username">{perfil?.username || "Usuario"}</span>
+                                                        <span className="post-date">
+                                                            {post.creationDate ? new Date(post.creationDate).toLocaleDateString() : ""}
+                                                        </span>
+                                                    </div>
+                                                </Link>
 
-                                                {menuPostAbiertoId === postId && (
-                                                    <div style={{
-                                                        position: "absolute",
-                                                        right: 0,
-                                                        top: "25px",
-                                                        background: "white",
-                                                        border: "1px solid #ddd",
-                                                        borderRadius: "6px",
-                                                        boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-                                                        zIndex: 10,
-                                                        width: "130px"
-                                                    }}>
+                                                {puedeBorrar && (
+                                                    <div style={{ position: "relative" }}>
                                                         <button 
-                                                            onClick={() => iniciarEliminacionPost(postId)}
-                                                            style={{
-                                                                width: "100%",
-                                                                padding: "8px 12px",
-                                                                background: "transparent",
-                                                                border: "none",
-                                                                textAlign: "left",
-                                                                color: "#ff3b30",
-                                                                cursor: "pointer",
-                                                                fontSize: "13px",
-                                                                fontWeight: "600"
-                                                            }}
+                                                            onClick={() => setMenuPostAbiertoId(menuPostAbiertoId === postId ? null : postId)}
+                                                            style={{ background: "transparent", border: "none", cursor: "pointer", padding: "4px" }}
                                                         >
-                                                            Eliminar post
+                                                            <img 
+                                                                src="/logoPuntos.png" 
+                                                                alt="Opciones" 
+                                                                style={{ width: "20px", height: "20px", objectFit: "contain" }} 
+                                                            />
                                                         </button>
+
+                                                        {menuPostAbiertoId === postId && (
+                                                            <div style={{
+                                                                position: "absolute",
+                                                                right: 0,
+                                                                top: "25px",
+                                                                background: "white",
+                                                                border: "1px solid #ddd",
+                                                                borderRadius: "6px",
+                                                                boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                                                                zIndex: 10,
+                                                                width: "130px"
+                                                            }}>
+                                                                <button 
+                                                                    onClick={() => iniciarEliminacionPost(postId)}
+                                                                    style={{
+                                                                        width: "100%",
+                                                                        padding: "8px 12px",
+                                                                        background: "transparent",
+                                                                        border: "none",
+                                                                        textAlign: "left",
+                                                                        color: "#ff3b30",
+                                                                        cursor: "pointer",
+                                                                        fontSize: "13px",
+                                                                        fontWeight: "600"
+                                                                    }}
+                                                                >
+                                                                    Eliminar post
+                                                                </button>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 )}
                                             </div>
-                                        )}
-                                    </div>
 
-                                    {post.content && <p className="post-text">{post.content}</p>}
-                                    {post.multimedia && (
-                                        <div className="post-media-container">
-                                            {post.multimedia.endsWith(".mp4") || post.multimedia.endsWith(".mov") ? (
-                                            <video controls src={`http://localhost:3000/${post.multimedia}`} className="post-media" />
-                                        ) : (
-                                            <img src={`http://localhost:3000/${post.multimedia}`} alt="Multimedia" className="post-media" />
-                                        )}
-                                        </div>
-                                    )}
+                                            {post.content && <p className="post-text">{post.content}</p>}
+                                            {post.multimedia && (
+                                                <div className="post-media-container">
+                                                    {post.multimedia.endsWith(".mp4") || post.multimedia.endsWith(".mov") ? (
+                                                    <video controls src={`http://localhost:3000/${post.multimedia}`} className="post-media" />
+                                                ) : (
+                                                    <img src={`http://localhost:3000/${post.multimedia}`} alt="Multimedia" className="post-media" />
+                                                )}
+                                                </div>
+                                            )}
 
-                                    <div className="post-actions">
-                                        <button className="action-btn"
-                                            type="button" 
-                                            onClick={async () => {
-                                                const yaDioLike = cambioLike[postId];
+                                            <div className="post-actions">
+                                                <button className="action-btn"
+                                                    type="button" 
+                                                    onClick={async () => {
+                                                        const yaDioLike = cambioLike[postId];
 
-                                                try {
-                                                    let data;
-                                                    if (yaDioLike) {
-                                                        data = await quitarLike(postId);
-                                                    } else {
-                                                        data = await darLike(postId);
-                                                    }
+                                                        try {
+                                                            let data;
+                                                            if (yaDioLike) {
+                                                                data = await quitarLike(postId);
+                                                            } else {
+                                                                data = await darLike(postId);
+                                                            }
 
-                                                    setCambioLike({ ...cambioLike, [postId]: !yaDioLike });
+                                                            setCambioLike({ ...cambioLike, [postId]: !yaDioLike });
 
-                                                    setPublicaciones(publicaciones.map(p => {
-                                                        const idActual = p.id || p.id_publicacion;
-                                                        if (idActual === postId) {
-                                                            return {
-                                                                ...p,
-                                                                likes: data.likes
-                                                            };
+                                                            setPublicaciones(publicaciones.map(p => {
+                                                                const idActual = p.id || p.id_publicacion;
+                                                                if (idActual === postId) {
+                                                                    return {
+                                                                        ...p,
+                                                                        likes: data.likes
+                                                                    };
+                                                                }
+                                                                return p;
+                                                            }));
+                                                        } catch (error) {
+                                                            console.error("Error al actualizar el like:", error);
                                                         }
-                                                        return p;
-                                                    }));
-                                                } catch (error) {
-                                                    console.error("Error al actualizar el like:", error);
-                                                }
-                                            }}
-                                            style={{ display: "flex", alignItems: "center", gap: "6px", background: "transparent", border: "none", cursor: "pointer" }} 
-                                        >
-                                            <img
-                                                src={cambioLike[postId] ? "/logoCorazonLleno.png" : "/logoCorazonVacio.png"}
-                                                alt="Me gusta"
-                                                style={{ width: "20px", height: "20px", objectFit: "contain" }}
-                                            />
-                                            <span style={{ fontSize: "13px", fontWeight: "600", color: "#555" }}>
-                                                {post.likes || 0}
-                                            </span>
-                                        </button>
-                                        
-                                        <button 
-                                        className="action-btn"
-                                        onClick={()=>navigate(`/comentarios/${postId}`)} 
-                                        style={{ display: "flex", alignItems: "center", gap: "6px", background: "transparent", border: "none", cursor: "pointer" }}>
-                                            <img
-                                                src="/logoComentario.png"
-                                                alt="Comentar"
-                                                style={{ width: "20px", height: "20px", objectFit: "contain" }}
-                                            />
-                                            <span style ={{ fontSize: "13px", fontWeight: "600", color: "#555" }}>
-                                                {post.cantidadComentarios || 0}
-                                            </span>
-                                        </button>
-                                    </div>
-                                </div>
-                            )
-                        })
-                    ) : (
-                        <p style={{textAlign: "center", color: "#666", padding: "20px"}}>
-                            Aún no hay publicaciones
-                        </p>
+                                                    }}
+                                                    style={{ display: "flex", alignItems: "center", gap: "6px", background: "transparent", border: "none", cursor: "pointer" }} 
+                                                >
+                                                    <img
+                                                        src={cambioLike[postId] ? "/logoCorazonLleno.png" : "/logoCorazonVacio.png"}
+                                                        alt="Me gusta"
+                                                        style={{ width: "20px", height: "20px", objectFit: "contain" }}
+                                                    />
+                                                    <span style={{ fontSize: "13px", fontWeight: "600", color: "#555" }}>
+                                                        {post.likes || 0}
+                                                    </span>
+                                                </button>
+                                                
+                                                <button 
+                                                className="action-btn"
+                                                onClick={()=>navigate(`/comentarios/${postId}`)} 
+                                                style={{ display: "flex", alignItems: "center", gap: "6px", background: "transparent", border: "none", cursor: "pointer" }}>
+                                                    <img
+                                                        src="/logoComentario.png"
+                                                        alt="Comentar"
+                                                        style={{ width: "20px", height: "20px", objectFit: "contain" }}
+                                                    />
+                                                    <span style ={{ fontSize: "13px", fontWeight: "600", color: "#555" }}>
+                                                        {post.cantidadComentarios || 0}
+                                                    </span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )
+                                })
+                            ) : (
+                                <p style={{textAlign: "center", color: "#666", padding: "20px"}}>
+                                    Aún no hay publicaciones
+                                </p>
+                            )}
+                        </>
                     )}
                 </div>
             </div>

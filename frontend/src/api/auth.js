@@ -251,7 +251,7 @@ export async function reiniciarContraseña(token, nuevaPassword){
 
 export async function darLike(postId) {
   const token = localStorage.getItem("token");
-  const res = await fetch(`http://localhost:3000/auth/publicaciones/${postId}/like`, {
+  const res = await fetch(`http://localhost:3000/posts/publicaciones/${postId}/like`, {
     method: "POST",
     headers: { "Authorization": `Bearer ${token}` }
   });
@@ -262,7 +262,7 @@ export async function darLike(postId) {
 
 export async function quitarLike(postId) {
   const token = localStorage.getItem("token");
-  const res = await fetch(`http://localhost:3000/auth/publicaciones/${postId}/like`, {
+  const res = await fetch(`http://localhost:3000/posts/publicaciones/${postId}/like`, {
     method: "DELETE",
     headers: { "Authorization": `Bearer ${token}` }
   });
@@ -275,7 +275,7 @@ export async function obtenerComentarios(postId){
   try{
     const token = localStorage.getItem("token");
     if (!token) throw new Error("No se proporcionó un token válido");
-    const res = await fetch(`${BASE_URL}/auth/publicaciones/${postId}/comentarios`,{
+    const res = await fetch(`${BASE_URL}/posts/publicaciones/${postId}/comentarios`,{
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -295,7 +295,7 @@ export async function crearComentario(postId, text){
   try{
     const token = localStorage.getItem("token");
     if (!token) throw new Error("No se proporcionó un token válido");
-    const res = await fetch(`${BASE_URL}/auth/publicaciones/${postId}/comentarios`,{
+    const res = await fetch(`${BASE_URL}/posts/publicaciones/${postId}/comentarios`,{
       method: "POST",
       headers:{
         "Content-Type": "application/json",
@@ -316,16 +316,16 @@ export async function eliminarComentario(postId, comentarioId){
   try{
     const token = localStorage.getItem("token");
     if (!token) throw new Error("No se proporcionó un token válido");
-    const res = await fetch(`${BASE_URL}/auth/publicaciones/${postId}/comentarios/${comentarioId}`,{
+    const res = await fetch(`${BASE_URL}/posts/publicaciones/${postId}/comentarios/${comentarioId}`,{
       method: "DELETE",
       headers:{
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`
-    },
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Error al eliminar comentario");
-  return data;
+      }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Error al eliminar comentario");
+    return data;
   }catch(error){
     console.log("Error al eliminar comentario", error);
     throw error;
@@ -336,3 +336,67 @@ export const esAdmin = () => {
     const user = JSON.parse(localStorage.getItem("user"));
     return user && user.rol === "admin";
 };
+
+export async function obtenerSolicitudesSeguimiento() {
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) throw new Error("No se proporcionó un token válido");
+    
+    const res = await fetch("http://localhost:3000/user/seguidores/solicitudes", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      }
+    });
+    
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Error al obtener las solicitudes de seguimiento");
+    return data;
+  } catch (error) {
+    console.log("Error al obtener solicitudes de seguimiento", error);
+    throw error;
+  }
+}
+
+export async function aceptarSolicitudSeguimiento(id) {
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) throw new Error("No se proporcionó un token válido");
+
+    const res = await fetch(`http://localhost:3000/user/seguidores/${id}/aceptar`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      }
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Error al aceptar la solicitud de seguimiento");
+    return data;
+  } catch (error) {
+    console.log("Error al aceptar solicitud de seguimiento", error);
+    throw error;
+  }
+}
+
+export async function rechazarSolicitudPrivada(id){
+  try{
+    const token = localStorage.getItem("token");
+    if (!token) throw new Error("No se proporcionó un token válido");
+    const res = await fetch(`http://localhost:3000/user/seguidores/${id}/rechazar`,{
+      method : "DELETE",
+      headers:{
+        "Content-Type" : "application/json",
+        "Authorization": `Bearer ${token}`
+      }
+    });
+    const data = await res.json();
+    if(!res.ok) throw new Error (data.message || "Error al rechazar la solicitud de seguimiento");
+    return data
+  }catch(error){
+    console.log("Error al rechazar la solicitud de seguimiento", error);
+    throw error;
+  }
+}
