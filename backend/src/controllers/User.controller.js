@@ -432,18 +432,16 @@ const verPerfil = async (req, res) => {
         });
 
         if (seguimientoEnviado) {
-            estadoSeguimiento = seguimientoEnviado.status; // "aceptado" o "pendiente" (lo que vos le enviaste)
+            estadoSeguimiento = seguimientoEnviado.status;
         } else if (seguimientoRecibido && seguimientoRecibido.status === "pendiente") {
-            estadoSeguimiento = "recibida"; // 👈 ¡Acá detectamos que él te envió una solicitud a vos!
-        } else if (seguimientoRecibido && seguimientoRecibido.status === "aceptado") {
-            estadoSeguimiento = "aceptado"; 
+            estadoSeguimiento = "recibida";
         }
 
         const loSigoReal = seguimientoEnviado?.status === "aceptado";
 
         // 3. Verificamos si tiene acceso a ver los posts
         const esPrivado = usuario.privacidad === "privado" || usuario.privacidad === "privada";
-        const tieneAcceso = !esPrivado || esDueño || loSigoReal || (seguimientoRecibido?.status === "aceptado");
+        const tieneAcceso = !esPrivado || esDueño || loSigoReal;
 
         let amistad = "ninguna";
         const relacion = await buscarAmistad(req.usuario.id, otroId);
