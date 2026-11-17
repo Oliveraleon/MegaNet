@@ -1,4 +1,5 @@
 const { Publicaciones, Reacciones, Comentarios, Usuarios} = require("../models");
+const { obtenerAmigos, puedeVerPost, notificar } = require("../utilities/utilidades.js");
 
 const getUserPosts = async (req, res) => {
     try {
@@ -25,7 +26,15 @@ const getPostByUser = async (req,res) =>{
             where: { userId: id},
             order: [["creationDate", "DESC"]]
         });
-        const postsConDatos = await agregarDatos(publicaciones, req.usuario.id);
+        // Solo se muestran las publicaciones que la privacidad permite ver
+        const amigos = await obtenerAmigos(req.usuario.id);
+        const visibles = [];
+        for (let i = 0; i < publicaciones.length; i++) {
+            if (puedeVerPost(publicaciones[i], req.usuario.id, amigos)) {
+                visibles.push(publicaciones[i]);
+            }
+        }
+        const postsConDatos = await agregarDatos(visibles, req.usuario.id);
         res.status(200).json(postsConDatos);
     }catch(error){
         console.error("Error al obtener publicaciones:", error);
@@ -39,7 +48,7 @@ const getPostByUser = async (req,res) =>{
 const crearPublicacion = async (req, res) => {
     try {
         const usuarioId = req.usuario.id;
-        const { content } = req.body;
+        const { content, privacy } = req.body;
 
         let multimedia = null;
         if (req.files && req.files.imagen && req.files.imagen[0]) {
@@ -60,7 +69,7 @@ const crearPublicacion = async (req, res) => {
         const nuevaPublicacion = await Publicaciones.create({
             content: textoValido ? content.trim() : "",
             multimedia: multimedia,
-            privacy: "public",
+            privacy: ["public", "friends", "private"].includes(privacy) ? privacy : "public",
             userId: usuarioId,
             creationDate: new Date()
         });
@@ -82,15 +91,22 @@ const editarPublicacion = async (req, res) => {
             return res.status(403).json({ message: "Solo podes editar tus propias publicaciones" });
         }
 
-        const { content } = req.body;
-        if (!content || content.trim() === "") {
-            return res.status(400).json({ message: "El texto no puede quedar vacio" });
+        const { content, privacy } = req.body;
+        if (content !== undefined) {
+            if (content.trim() === "" && !post.multimedia) {
+                return res.status(400).json({ message: "El texto no puede quedar vacio" });
+            }
+            if (content.length > 255) {
+                return res.status(400).json({ message: "El texto es muy largo (maximo 255 caracteres)" });
+            }
+            post.content = content.trim();
         }
-        if (content.length > 255) {
-            return res.status(400).json({ message: "El texto es muy largo (maximo 255 caracteres)" });
+        if (privacy !== undefined) {
+            if (!["public", "friends", "private"].includes(privacy)) {
+                return res.status(400).json({ message: "Privacidad no valida" });
+            }
+            post.privacy = privacy;
         }
-
-        post.content = content.trim();
         await post.save();
         res.status(200).json({ message: "Publicacion editada" });
     } catch (error) {
@@ -187,6 +203,10 @@ const crearComentario = async (req, res) => {
             text: text.trim(), 
             postId: post.id, 
             userId: req.usuario.id });
+        if (post.userId !== req.usuario.id) {
+            const autor = await Usuarios.findByPk(req.usuario.id);
+            await notificar(post.userId, "💭 @" + autor.username + " comentó tu publicación", "/comentarios/" + post.id);
+        }
         const comentarioConAutor = await Comentarios.findByPk(nuevoComentario.id,{
             include: [{ model: Usuarios, as: "autor", attributes: ["id", "username", "profilePicture"] }]
         });

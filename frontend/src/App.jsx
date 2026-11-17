@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Route, Routes, Link, Navigate, useNavigate, useLocation } from "react-router-dom";
 import Login from "./components/Login";
@@ -19,7 +18,8 @@ import Chat from "./components/Chat"
 import Servidores from "./components/Servidores"
 import PaginaComentarios from "./components/PaginaComentarios"
 import Secciones from "./components/Secciones"
-import { cerrarSesion, estaLogueado, getUsuario } from "./api/auth";
+import Notificaciones from "./components/Notificaciones"
+import { cerrarSesion, estaLogueado, getUsuario, esAdmin } from "./api/auth";
 
 function App() {
     const navigate = useNavigate();
@@ -71,6 +71,7 @@ function App() {
                         alignItems: "center",
                         gap: "15px"
                     }}>
+                        <Notificaciones />
                         <Link to="/amigos" style={{ textDecoration: "none", color: "#222", fontWeight: "600" }}>
                             Amigos
                         </Link>
@@ -101,6 +102,7 @@ function App() {
                             <span style={{ fontWeight: "600" }}>
                                 {user?.username || user?.email || "Mi perfil"}
                             </span>
+                            {esAdmin() && <span className="etiqueta-admin">Admin</span>}
                         </Link>
 
                         <button

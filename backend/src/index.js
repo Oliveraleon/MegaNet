@@ -9,6 +9,7 @@ const profileRoute = require("./routes/user.routes.js");
 const postRoutes = require("./routes/Post.routes.js");
 const chatRoutes = require("./routes/chat.routes.js");
 const adminRoutes = require("./routes/Admin.routes.js");
+const notificacionesRoutes = require("./routes/notificaciones.routes.js");
 const { carpeta } = require("./middelwares/upload.js");
 require("./models/index.js");
 
@@ -25,6 +26,7 @@ server.use("/user", profileRoute);
 server.use("/posts", postRoutes);
 server.use("/chat", chatRoutes);
 server.use("/admin", adminRoutes);
+server.use("/notificaciones", notificacionesRoutes);
 
 server.listen(3000, async () => {
     await sequelize.authenticate();

@@ -79,6 +79,21 @@ const login = async (req, res) => {
     }
 };
 
+const eliminarComentario = async (req, res) => {
+    try{
+        const comentario = await Comentarios.findByPk(req.params.comentarioId);
+        if(!comentario){
+            return res.status(404).json({message: "El comentario no existe"});
+        }
+        if (comentario.userId !== req.usuario.id) {
+            return res.status(403).json({ message: "No se puede eliminar comentarios de otros usuarios" });
+        }
+        await comentario.destroy();
+        res.status(200).json({message: "Comentario eliminado"});
+    }catch(error){
+        res.status(500).json({message: "Error al eliminar el comentario", error: error.message});
+    }
+}
 
 
 module.exports = { 

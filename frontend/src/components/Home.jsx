@@ -72,7 +72,7 @@ function Home() {
 
         try {
             const token = localStorage.getItem("token")
-            const res = await fetch(`${API_URL}/publicaciones/${postAEliminar}`, {
+            const res = await fetch(`${API_URL}/posts/publicaciones/${postAEliminar}`, {
                 method: "DELETE",
                 headers: { "Authorization": `Bearer ${token}` }
             })

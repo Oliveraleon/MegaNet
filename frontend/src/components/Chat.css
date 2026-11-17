@@ -934,3 +934,966 @@
     background: none;
     color: var(--suave);
 }
+
+/* =====================================================================
+   AGREGADO: fotos de perfil, mensajes, vista previa, visor, calendario,
+   notificaciones, menú de publicaciones y privacidad
+   ===================================================================== */
+
+/* ---------- Fotos de perfil en los chats ---------- */
+.con-foto {
+    object-fit: cover;
+    background: var(--fondo);
+}
+
+.chip .avatar-mini,
+.sugerencias .avatar-mini {
+    width: 20px;
+    height: 20px;
+    font-size: 0.65rem;
+}
+
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.boton-chico {
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.boton-chico:hover,
+.boton-chico.activo {
+    border-color: var(--rosa);
+    background: var(--rosa-claro);
+    color: var(--rosa-oscuro);
+}
+
+.item {
+    transition: background 0.15s;
+}
+
+/* ---------- Mensajes: separador por día, foto al costado y borrar ---------- */
+.separador-dia {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin: 1rem 0 0.6rem 0;
+    color: var(--suave);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.separador-dia::before,
+.separador-dia::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--borde);
+}
+
+.separador-dia span {
+    padding: 0.2rem 0.7rem;
+    border-radius: 999px;
+    background: var(--tarjeta);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.fila-mensaje {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.fila-mensaje.seguido {
+    margin-top: 0.1rem;
+}
+
+.fila-mensaje.mia {
+    justify-content: flex-end;
+}
+
+.fila-mensaje .burbuja {
+    margin: 0;
+}
+
+.fila-mensaje.mia .burbuja {
+    margin-left: 0;
+}
+
+.fila-mensaje.mia .borrar-mensaje {
+    order: -1;
+}
+
+.avatar-espacio {
+    width: 26px;
+    flex-shrink: 0;
+}
+
+.burbuja {
+    box-shadow: 0 1px 3px rgba(15, 18, 30, 0.08);
+}
+
+.burbuja.mia {
+    background: linear-gradient(135deg, #eb3b6f, #d62f63);
+}
+
+.borrar-mensaje {
+    align-self: center;
+    border: none;
+    background: transparent;
+    font-size: 0.85rem;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.fila-mensaje:hover .borrar-mensaje {
+    opacity: 0.6;
+}
+
+.borrar-mensaje:hover {
+    opacity: 1 !important;
+}
+
+/* Archivos dentro de la burbuja */
+.adjunto {
+    margin: 0.3rem 0;
+}
+
+.adjunto img,
+.adjunto video {
+    display: block;
+    max-width: 260px;
+    max-height: 260px;
+    border-radius: 12px;
+    object-fit: cover;
+}
+
+.adjunto img:hover {
+    filter: brightness(0.92);
+}
+
+.ampliar {
+    margin-top: 0.3rem;
+    padding: 0.2rem 0.6rem;
+    border: none;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.08);
+    color: inherit;
+    font-size: 0.75rem;
+    cursor: pointer;
+}
+
+/* ---------- Vista previa del archivo antes de enviar ---------- */
+.previa-adjunto {
+    position: absolute;
+    left: 1.2rem;
+    right: 1.2rem;
+    bottom: 100%;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.6rem;
+    background: var(--tarjeta);
+    border: 1px solid var(--borde);
+    border-radius: 14px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    z-index: 5;
+}
+
+.previa-adjunto img,
+.previa-adjunto video {
+    width: 84px;
+    height: 84px;
+    border-radius: 10px;
+    object-fit: cover;
+    background: #000000;
+}
+
+.previa-adjunto audio {
+    max-width: 220px;
+}
+
+.previa-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    font-size: 0.85rem;
+}
+
+.previa-info strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ---------- Visor para ver imágenes y videos en grande (con zoom) ---------- */
+.visor-fondo {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    background: rgba(10, 12, 20, 0.88);
+}
+
+.visor-barra {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.8rem;
+    color: #ffffff;
+}
+
+.visor-barra button,
+.visor-barra a {
+    min-width: 38px;
+    padding: 0.45rem 0.8rem;
+    border: none;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.14);
+    color: #ffffff;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.visor-barra button:hover,
+.visor-barra a:hover {
+    background: rgba(255, 255, 255, 0.28);
+}
+
+.visor-barra span {
+    min-width: 52px;
+    text-align: center;
+    font-weight: 700;
+}
+
+.visor-contenido {
+    flex: 1;
+    overflow: auto;
+    display: flex;
+    padding: 1rem;
+}
+
+.visor-contenido img,
+.visor-contenido video {
+    margin: auto;
+    width: auto;
+    max-width: none;
+    border-radius: 8px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+/* ---------- Grupos: barra con fotos de los miembros ---------- */
+.pila-avatares {
+    display: flex;
+    align-items: center;
+}
+
+.pila-avatares .avatar-mini {
+    margin-left: -6px;
+    border: 2px solid #fafbfd;
+}
+
+.pila-avatares .avatar-mini:first-child {
+    margin-left: 0;
+}
+
+.avatar-mini.mas {
+    background: var(--borde);
+    color: var(--texto);
+}
+
+.pila-avatares .texto-suave {
+    margin-left: 0.6rem;
+    font-size: 0.85rem;
+}
+
+.barra-grupo .acciones {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+}
+
+/* ---------- Admin ---------- */
+.aviso-admin {
+    margin: 0.3rem 0.4rem 0.5rem 0.4rem;
+    padding: 0.5rem 0.7rem;
+    border-radius: 10px;
+    background: #eef4ff;
+    color: #1d4ed8;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.etiqueta-admin {
+    padding: 0.1rem 0.5rem;
+    border-radius: 999px;
+    background: #1d4ed8;
+    color: #ffffff;
+    font-size: 0.7rem;
+    font-weight: 700;
+}
+
+.boton-archivo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    width: fit-content;
+    padding: 0.45rem 0.9rem;
+    border-radius: 8px;
+    background: var(--rosa-claro);
+    color: var(--rosa);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* ---------- Calendario de grupos ---------- */
+.panel-calendario {
+    width: 320px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid var(--borde);
+    background: #fafbfd;
+    overflow-y: auto;
+}
+
+.calendario {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    padding: 0 1rem 1rem 1rem;
+}
+
+.cal-cabecera {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.cal-cabecera strong {
+    flex: 1;
+    text-align: center;
+}
+
+.cal-hoy {
+    padding: 0.25rem 0.7rem;
+    border: 1px solid var(--borde);
+    border-radius: 999px;
+    background: var(--tarjeta);
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.cal-grilla {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.2rem;
+    padding: 0.5rem;
+    background: var(--tarjeta);
+    border-radius: 14px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.cal-nombre-dia {
+    padding: 0.2rem 0;
+    text-align: center;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--suave);
+}
+
+.cal-dia {
+    position: relative;
+    aspect-ratio: 1;
+    border: none;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--texto);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.cal-dia:hover {
+    background: var(--fondo);
+}
+
+.cal-dia.pasado {
+    color: #b8bec9;
+}
+
+.cal-dia.hoy {
+    color: var(--rosa);
+    box-shadow: inset 0 0 0 2px var(--rosa-claro);
+}
+
+.cal-dia.elegido {
+    background: var(--rosa);
+    color: #ffffff;
+}
+
+.cal-punto {
+    position: absolute;
+    bottom: 3px;
+    left: 50%;
+    transform: translateX(-50%);
+    min-width: 6px;
+    height: 6px;
+    padding: 0 2px;
+    border-radius: 999px;
+    background: var(--verde);
+    color: #ffffff;
+    font-size: 0.5rem;
+    line-height: 6px;
+}
+
+.cal-dia.elegido .cal-punto {
+    background: #ffffff;
+}
+
+.cal-detalle {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.cal-detalle-titulo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.cal-detalle-titulo .boton-chico {
+    white-space: nowrap;
+}
+
+.cal-detalle-titulo h4 {
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+.cal-sin-eventos {
+    margin: 0;
+    font-size: 0.85rem;
+}
+
+.cal-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.8rem;
+    background: var(--tarjeta);
+    border: 1px solid var(--borde);
+    border-radius: 14px;
+}
+
+.cal-form input[type="text"],
+.cal-form textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.6rem 0.8rem;
+    border: 1px solid var(--borde);
+    border-radius: 10px;
+    background: var(--fondo);
+    font: inherit;
+    font-size: 0.9rem;
+    outline: none;
+}
+
+.cal-form textarea {
+    min-height: 60px;
+    resize: vertical;
+}
+
+.cal-form input:focus,
+.cal-form textarea:focus {
+    border-color: var(--rosa);
+    background: var(--tarjeta);
+}
+
+.cal-etiqueta {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--suave);
+}
+
+.cal-horas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+}
+
+.chip.marcado {
+    border-color: var(--rosa);
+    background: var(--rosa);
+    color: #ffffff;
+}
+
+.cal-otra-hora {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--suave);
+}
+
+.cal-otra-hora input[type="time"] {
+    padding: 0.35rem 0.6rem;
+    border: 1px solid var(--borde);
+    border-radius: 8px;
+    background: var(--fondo);
+    font: inherit;
+    font-weight: 700;
+    color: var(--texto);
+}
+
+.cal-resumen {
+    padding: 0.5rem 0.7rem;
+    border-radius: 10px;
+    background: var(--rosa-claro);
+    color: var(--rosa-oscuro);
+    font-size: 0.82rem;
+}
+
+.cal-form .aviso-error {
+    margin: 0;
+}
+
+.cal-evento {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    padding: 0.6rem;
+    background: var(--tarjeta);
+    border-left: 4px solid var(--rosa);
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.cal-evento-hora {
+    padding: 0.2rem 0.45rem;
+    border-radius: 8px;
+    background: var(--rosa-claro);
+    color: var(--rosa-oscuro);
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.cal-evento-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    font-size: 0.85rem;
+    word-break: break-word;
+}
+
+.cal-proximos {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.cal-proximos .seccion {
+    margin-left: 0;
+}
+
+.cal-proximo {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.5rem;
+    border: 1px solid var(--borde);
+    border-radius: 12px;
+    background: var(--tarjeta);
+    text-align: left;
+    cursor: pointer;
+}
+
+.cal-proximo:hover {
+    border-color: var(--rosa);
+}
+
+.cal-fecha-chica {
+    width: 42px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.2rem 0;
+    border-radius: 8px;
+    background: var(--fondo);
+    color: var(--rosa);
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.cal-fecha-chica strong {
+    font-size: 1rem;
+    color: var(--texto);
+}
+
+.cal-proximo-texto {
+    display: flex;
+    flex-direction: column;
+    font-size: 0.85rem;
+}
+
+/* ---------- Notificaciones (campanita) ---------- */
+.notif {
+    position: relative;
+}
+
+.notif-boton {
+    position: relative;
+    width: 42px;
+    height: 42px;
+    border: 1px solid #eaeaea;
+    border-radius: 50%;
+    background: #ffffff;
+    font-size: 1.15rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.notif-boton:hover,
+.notif-boton.activo {
+    background: var(--rosa-claro);
+}
+
+.notif-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: var(--rojo);
+    color: #ffffff;
+    font-size: 0.7rem;
+    font-weight: 700;
+    line-height: 18px;
+    box-shadow: 0 0 0 2px #ffffff;
+}
+
+.notif-fondo {
+    position: fixed;
+    inset: 0;
+    z-index: 900;
+}
+
+.notif-panel {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    z-index: 901;
+    width: 340px;
+    max-width: 90vw;
+    background: var(--tarjeta);
+    border-radius: 16px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
+    overflow: hidden;
+    color: var(--texto);
+}
+
+.notif-titulo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.9rem 1rem;
+    border-bottom: 1px solid var(--borde);
+}
+
+.notif-lista {
+    max-height: 380px;
+    overflow-y: auto;
+}
+
+.notif-vacio {
+    margin: 0;
+    padding: 1.5rem;
+    text-align: center;
+    color: var(--suave);
+}
+
+.notif-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    width: 100%;
+    padding: 0.7rem 1rem;
+    border: none;
+    border-bottom: 1px solid var(--borde);
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+    color: var(--texto);
+}
+
+.notif-item:hover {
+    background: var(--fondo);
+}
+
+.notif-item.nueva {
+    background: #fff5f8;
+    box-shadow: inset 3px 0 0 var(--rosa);
+}
+
+.notif-texto {
+    font-size: 0.88rem;
+    line-height: 1.35;
+}
+
+.notif-hora {
+    font-size: 0.72rem;
+    color: var(--suave);
+}
+
+/* ---------- Publicaciones: menú de 3 puntitos y privacidad ---------- */
+.menu-post {
+    position: relative;
+}
+
+.menu-post-boton {
+    padding: 4px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    cursor: pointer;
+}
+
+.menu-post-boton:hover {
+    background: #f0f2f5;
+}
+
+.menu-post-boton img {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+}
+
+.menu-post-lista {
+    position: absolute;
+    top: 30px;
+    right: 0;
+    z-index: 901;
+    width: 210px;
+    padding: 0.35rem;
+    display: flex;
+    flex-direction: column;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.16);
+}
+
+.menu-post-lista button {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.55rem 0.7rem;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: #202638;
+    font-size: 0.85rem;
+    text-align: left;
+    cursor: pointer;
+}
+
+.menu-post-lista button:hover {
+    background: #f3f5f9;
+}
+
+.menu-post-lista button.elegida {
+    font-weight: 700;
+}
+
+.menu-post-lista .tilde {
+    margin-left: auto;
+    color: #eb3b6f;
+}
+
+.menu-post-lista button.peligro {
+    margin-top: 0.2rem;
+    border-top: 1px solid #e8ebf1;
+    border-radius: 0 0 8px 8px;
+    color: #e5484d;
+    font-weight: 600;
+}
+
+.menu-post-seccion {
+    padding: 0.5rem 0.7rem 0.2rem 0.7rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6b7280;
+}
+
+.etiqueta-privacidad {
+    display: inline-block;
+    padding: 0.05rem 0.45rem;
+    border-radius: 999px;
+    background: #eef1f6;
+    color: #6b7280;
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.etiqueta-privacidad.friends {
+    background: #e7f8ee;
+    color: #15803d;
+}
+
+.etiqueta-privacidad.private {
+    background: #fdecec;
+    color: #b42318;
+}
+
+.campo-titulo {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #6b7280;
+}
+
+.opciones-privacidad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+}
+
+.opcion-privacidad {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+    padding: 0.7rem 0.4rem;
+    border: 2px solid #e8ebf1;
+    border-radius: 12px;
+    background: #ffffff;
+    color: #202638;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+}
+
+.opcion-privacidad span:last-child {
+    font-size: 0.72rem;
+    color: #6b7280;
+}
+
+.opcion-icono {
+    font-size: 1.3rem;
+}
+
+.opcion-privacidad.marcada {
+    border-color: #eb3b6f;
+    background: #fde7ee;
+}
+
+.editar-texto {
+    min-height: 110px;
+    padding: 0.8rem;
+    border: 1px solid #e8ebf1;
+    border-radius: 12px;
+    background: #f3f5f9;
+    font: inherit;
+    resize: vertical;
+    outline: none;
+}
+
+.editar-texto:focus {
+    border-color: #eb3b6f;
+    background: #ffffff;
+}
+
+.contador-texto {
+    margin-top: -0.5rem;
+    text-align: right;
+    font-size: 0.75rem;
+}
+
+.modal-botones {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+.boton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* ---------- Opciones del grupo ---------- */
+.lista-miembros {
+    max-height: 200px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.cabecera-acciones .pila-avatares {
+    margin-right: 0.4rem;
+}
+
+.ventana-cabecera h3 {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ventana-cabecera .texto-suave {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ---------- Celulares ---------- */
+@media (max-width: 800px) {
+    .panel-calendario {
+        width: 100%;
+        border-left: none;
+        border-top: 1px solid var(--borde);
+    }
+
+    .previa-adjunto {
+        left: 0.5rem;
+        right: 0.5rem;
+    }
+
+    .adjunto img,
+    .adjunto video {
+        max-width: 200px;
+    }
+
+    .opciones-privacidad {
+        grid-template-columns: 1fr;
+    }
+
+    .cabecera-acciones .pila-avatares {
+        display: none;
+    }
+
+    .cabecera-acciones .boton-chico {
+        white-space: nowrap;
+    }
+}

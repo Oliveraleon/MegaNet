@@ -7,6 +7,7 @@ const route = Router();
 
 route.get('/getUserPosts', verificarToken, getUserPosts);
 route.get('/user/:id', verificarToken, getPostByUser);
+route.post('/createPost', verificarToken, subirImagen, crearPublicacion);
 route.post('/publicaciones', verificarToken, subirImagen, crearPublicacion)
 route.put('/publicaciones/:id', verificarToken, editarPublicacion)
 route.delete('/publicaciones/:id', verificarToken, eliminarPublicacion)

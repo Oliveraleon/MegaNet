@@ -1,10 +1,12 @@
 import "./Chat.css"
 
 import { useEffect, useState } from "react"
-import { Navigate, useParams } from "react-router-dom"
-import { estaLogueado, getUsuario } from "../api/auth"
+import { Navigate, useParams, Link } from "react-router-dom"
+import { estaLogueado, getUsuario, esAdmin } from "../api/auth"
 import axios from "axios"
 import VentanaMensajes from "./VentanaMensajes"
+import Avatar from "./Avatar"
+import Calendario from "./Calendario"
 
 const API = "http://localhost:3000/chat/"
 
@@ -17,6 +19,8 @@ function Chat() {
     const [abierto, setAbierto] = useState(null)
     const [miembros, setMiembros] = useState([])
     const [nuevoMiembro, setNuevoMiembro] = useState("")
+    const [verCalendario, setVerCalendario] = useState(false)
+    const [verOpciones, setVerOpciones] = useState(false)
 
     const [mostrarFormulario, setMostrarFormulario] = useState(false)
     const [nombreGrupo, setNombreGrupo] = useState("")
@@ -26,20 +30,30 @@ function Chat() {
     const token = localStorage.getItem("token")
     const config = { headers: { Authorization: "Bearer " + token } }
     const yo = getUsuario()
+    const admin = esAdmin()
+
+    const abrirPrivado = (u) => {
+        setVerCalendario(false)
+        setAbierto({ tipo: "privado", id: u.id, nombre: "@" + u.username, usuario: u })
+    }
 
     const cargar = async () => {
-        const res1 = await axios.get("http://localhost:3000/chat/contactos", config)
-        const res2 = await axios.get("http://localhost:3000/chat/grupos", config)
-        setContactos(res1.data.usuarios)
-        setGrupos(res2.data.grupos)
+        try {
+            const res1 = await axios.get(API + "contactos", config)
+            const res2 = await axios.get(API + "grupos", config)
+            setContactos(res1.data.usuarios)
+            setGrupos(res2.data.grupos)
 
             if (id) {
-            const persona = res1.data.usuarios.find((u) => u.id === Number(id))
-            if (persona) {
-                setAbierto({ tipo: "privado", id: persona.id, nombre: "@" + persona.username })
-            } else {
-                setError("Solo podés chatear con amigos o con personas que se siguen mutuamente")
+                const persona = res1.data.usuarios.find((u) => u.id === Number(id))
+                if (persona) {
+                    abrirPrivado(persona)
+                } else {
+                    setError("Solo podés chatear con amigos o con personas que se siguen mutuamente")
+                }
             }
+        } catch (err) {
+            setError(err.response?.data?.message || "No se pudieron cargar los chats. ¿Está prendido el backend?")
         }
     }
 
@@ -51,8 +65,12 @@ function Chat() {
 
     const abrirGrupo = async (grupo) => {
         setAbierto({ tipo: "grupo", id: grupo.id, nombre: grupo.name, ownerId: grupo.ownerId })
-        const res = await axios.get(API + "grupos/" + grupo.id, config)
-        setMiembros(res.data.miembros)
+        try {
+            const res = await axios.get(API + "grupos/" + grupo.id, config)
+            setMiembros(res.data.miembros)
+        } catch (err) {
+            setError(err.response?.data?.message || "No se pudo abrir el grupo")
+        }
     }
 
     const marcar = (contactoId) => {
@@ -66,7 +84,7 @@ function Chat() {
     const crearGrupo = async (e) => {
         e.preventDefault()
         try {
-            await axios.post("http://localhost:3000/chat/grupos", { name: nombreGrupo, miembros: seleccionados }, config)
+            await axios.post(API + "grupos", { name: nombreGrupo, miembros: seleccionados }, config)
             setNombreGrupo("")
             setSeleccionados([])
             setMostrarFormulario(false)
@@ -82,6 +100,7 @@ function Chat() {
         try {
             await axios.post(API + "grupos/" + abierto.id + "/miembros", { userId: Number(nuevoMiembro) }, config)
             setNuevoMiembro("")
+            setVerOpciones(false)
             abrirGrupo({ id: abierto.id, name: abierto.nombre, ownerId: abierto.ownerId })
         } catch (err) {
             alert(err.response?.data?.message || "No se pudo agregar")
@@ -91,18 +110,74 @@ function Chat() {
     const salirDelGrupo = async () => {
         if (!confirm("¿Querés salir del grupo " + abierto.nombre + "?")) return
         await axios.delete(API + "grupos/" + abierto.id + "/miembros", config)
+        setVerOpciones(false)
+        setVerCalendario(false)
         setAbierto(null)
         cargar()
+    }
+
+    const expulsarMiembro = async (m) => {
+        if (!confirm("¿Sacar a @" + m.username + " del grupo?")) return
+        try {
+            await axios.delete(API + "grupos/" + abierto.id + "/miembros/" + m.id, config)
+            abrirGrupo({ id: abierto.id, name: abierto.nombre, ownerId: abierto.ownerId })
+        } catch (err) {
+            alert(err.response?.data?.message || "No se pudo sacar al miembro")
+        }
+    }
+
+    const eliminarGrupo = async () => {
+        if (!confirm("¿Eliminar el grupo " + abierto.nombre + " con todos sus mensajes y eventos?")) return
+        try {
+            await axios.delete(API + "grupos/" + abierto.id, config)
+            setVerOpciones(false)
+            setAbierto(null)
+            setVerCalendario(false)
+            cargar()
+        } catch (err) {
+            alert(err.response?.data?.message || "No se pudo eliminar el grupo")
+        }
+    }
+
+    const pasarPropiedad = async (m) => {
+        if (!confirm("¿Pasarle la propiedad del grupo a @" + m.username + "?")) return
+        try {
+            await axios.put(API + "grupos/" + abierto.id + "/propietario", { userId: m.id }, config)
+            abrirGrupo({ id: abierto.id, name: abierto.nombre, ownerId: m.id })
+            const res = await axios.get(API + "grupos", config)
+            setGrupos(res.data.grupos)
+        } catch (err) {
+            alert(err.response?.data?.message || "No se pudo pasar la propiedad")
+        }
     }
 
     if (!estaLogueado()) return <Navigate to="/login" replace />
 
     const esGrupo = abierto?.tipo === "grupo"
+    const soyMiembro = miembros.some((m) => m.id === yo?.id)
+    const puedoAdministrar = esGrupo && (abierto.ownerId === yo?.id || admin)
+
+    // Botones que van arriba a la derecha del chat de un grupo
+    const accionesGrupo = esGrupo && (
+        <>
+            <div className="pila-avatares" title={miembros.map((m) => "@" + m.username).join(", ")}>
+                {miembros.slice(0, 4).map((m) => (
+                    <Avatar key={m.id} usuario={m} clase="avatar-mini" />
+                ))}
+                {miembros.length > 4 && <span className="avatar-mini mas">+{miembros.length - 4}</span>}
+            </div>
+            <button className={verCalendario ? "boton-chico activo" : "boton-chico"} onClick={() => setVerCalendario(!verCalendario)}>
+                📅 Calendario
+            </button>
+            <button className="boton-icono" onClick={() => setVerOpciones(true)} title="Opciones del grupo">⚙️</button>
+        </>
+    )
+
     let url = ""
     let mencionables = []
     if (abierto && !esGrupo) {
         url = API + "privado/" + abierto.id
-        mencionables = [{ id: yo?.id, username: yo?.username }, { id: abierto.id, username: abierto.nombre.slice(1) }]
+        mencionables = [yo, abierto.usuario]
     }
     if (esGrupo) {
         url = API + "grupos/" + abierto.id + "/mensajes"
@@ -131,15 +206,19 @@ function Chat() {
                 {tab === "privados" && (
                     <div className="lista">
                         {contactos.length === 0 && (
-                            <p className="texto-suave centrado">Agregá amigos o seguí a alguien que te siga para poder chatear.</p>
+                            <div className="vacio">
+                                <span className="vacio-icono">🤝</span>
+                                <p>Para chatear tienen que ser amigos o seguirse mutuamente.</p>
+                                <Link to="/buscador" className="boton-chico">Buscar personas</Link>
+                            </div>
                         )}
                         {contactos.map((u) => (
                             <button
                                 key={u.id}
                                 className={abierto?.tipo === "privado" && abierto.id === u.id ? "item activo" : "item"}
-                                onClick={() => setAbierto({ tipo: "privado", id: u.id, nombre: "@" + u.username })}
+                                onClick={() => abrirPrivado(u)}
                             >
-                                <div className="avatar-chat">{u.username[0].toUpperCase()}</div>
+                                <Avatar usuario={u} />
                                 <div className="item-texto">
                                     <strong>@{u.username}</strong>
                                     <span>Chat privado</span>
@@ -151,6 +230,8 @@ function Chat() {
 
                 {tab === "grupos" && (
                     <div className="lista">
+                        {admin && <p className="aviso-admin">🛡️ Sos administrador: ves todos los grupos</p>}
+
                         {mostrarFormulario && (
                             <form className="tarjeta-form" onSubmit={crearGrupo}>
                                 <input
@@ -161,6 +242,7 @@ function Chat() {
                                 />
                                 <span className="texto-suave">Elegí quiénes van a estar:</span>
                                 <div className="chips">
+                                    {contactos.length === 0 && <span className="texto-suave">Todavía no tenés contactos.</span>}
                                     {contactos.map((u) => (
                                         <button
                                             type="button"
@@ -168,7 +250,8 @@ function Chat() {
                                             className={seleccionados.includes(u.id) ? "chip marcado" : "chip"}
                                             onClick={() => marcar(u.id)}
                                         >
-                                            {seleccionados.includes(u.id) ? "✓ " : "+ "}@{u.username}
+                                            <Avatar usuario={u} clase="avatar-mini" />
+                                            {seleccionados.includes(u.id) ? "✓ " : ""}@{u.username}
                                         </button>
                                     ))}
                                 </div>
@@ -177,7 +260,10 @@ function Chat() {
                         )}
 
                         {grupos.length === 0 && !mostrarFormulario && (
-                            <p className="texto-suave centrado">Todavía no estás en ningún grupo.</p>
+                            <div className="vacio">
+                                <span className="vacio-icono">👥</span>
+                                <p>Todavía no estás en ningún grupo.</p>
+                            </div>
                         )}
                         {grupos.map((g) => (
                             <button
@@ -188,13 +274,14 @@ function Chat() {
                                 <div className="avatar-chat grupo">{g.name[0].toUpperCase()}</div>
                                 <div className="item-texto">
                                     <strong>{g.name}</strong>
-                                    <span>Grupo</span>
+                                    <span>{g.ownerId === yo?.id ? "Grupo · sos el creador" : "Grupo"}</span>
                                 </div>
                             </button>
                         ))}
                     </div>
                 )}
             </aside>
+
             <section className="panel-principal">
                 {!abierto && (
                     <div className="vacio grande">
@@ -204,41 +291,81 @@ function Chat() {
                     </div>
                 )}
 
-                {esGrupo && (
-                    <div className="barra-grupo">
-                        <div className="chips">
-                            {miembros.map((m) => (
-                                <span key={m.id} className="chip fijo">@{m.username}</span>
-                            ))}
-                        </div>
-                        <div className="acciones">
-                            {abierto.ownerId === yo?.id && (
-                                <>
-                                    <select value={nuevoMiembro} onChange={(e) => setNuevoMiembro(e.target.value)}>
-                                        <option value="">Agregar contacto...</option>
-                                        {contactos.map((u) => (
-                                            <option key={u.id} value={u.id}>@{u.username}</option>
-                                        ))}
-                                    </select>
-                                    <button className="boton-chico" onClick={agregarMiembro}>Agregar</button>
-                                </>
-                            )}
-                            <button className="boton-chico peligro" onClick={salirDelGrupo}>Salir</button>
-                        </div>
-                    </div>
-                )}
-
                 {abierto && (
                     <VentanaMensajes
                         key={url}
                         url={url}
                         titulo={abierto.nombre}
-                        subtitulo={esGrupo ? miembros.length + " miembros" : "Chat privado"}
-                        icono={esGrupo ? abierto.nombre[0].toUpperCase() : abierto.nombre[1].toUpperCase()}
+                        subtitulo={esGrupo ? miembros.length + " miembros · " + miembros.map((m) => "@" + m.username).join(", ") : "Chat privado"}
+                        icono={esGrupo ? abierto.nombre[0].toUpperCase() : <Avatar usuario={abierto.usuario} perfil />}
                         miembros={mencionables}
+                        acciones={accionesGrupo}
                     />
                 )}
             </section>
+
+            {esGrupo && verCalendario && (
+                <aside className="panel-calendario">
+                    <div className="panel-titulo">
+                        <h2>📅 Calendario</h2>
+                        <button className="boton-icono" onClick={() => setVerCalendario(false)} title="Cerrar">✕</button>
+                    </div>
+                    <Calendario key={abierto.id} rutaEventos={"grupos/" + abierto.id + "/eventos"} puedeModerar={puedoAdministrar} />
+                </aside>
+            )}
+
+            {esGrupo && verOpciones && (
+                <div className="modal-fondo" onClick={() => setVerOpciones(false)}>
+                    <div className="modal-caja" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-titulo">
+                            <h3>⚙️ {abierto.nombre}</h3>
+                            <button className="boton-icono" onClick={() => setVerOpciones(false)}>✕</button>
+                        </div>
+
+                        {admin && abierto.ownerId !== yo?.id && <p className="aviso-admin">🛡️ Estás como administrador</p>}
+
+                        <div className="campo">
+                            <span>Miembros · {miembros.length}</span>
+                                {miembros.map((m) => (
+                                    <div key={m.id} className="miembro">
+                                        <Avatar usuario={m} clase="avatar-mini" perfil />
+                                        <span className="miembro-nombre">
+                                            @{m.username}
+                                            {m.id === yo?.id && <span className="texto-suave"> (vos)</span>}
+                                        </span>
+                                        {m.id === abierto.ownerId && <span title="Creador">👑</span>}
+                                        {puedoAdministrar && m.id !== abierto.ownerId && (
+                                            <>
+                                                <button type="button" className="boton-chico" onClick={() => pasarPropiedad(m)}>👑 Dueño</button>
+                                                <button type="button" className="boton-chico" onClick={() => expulsarMiembro(m)}>🚫 Sacar</button>
+                                            </>
+                                        )}
+                                    </div>
+                                ))}
+                        </div>
+
+                        {puedoAdministrar && (
+                            <div className="campo">
+                                <span>Agregar a un contacto</span>
+                                <select value={nuevoMiembro} onChange={(e) => setNuevoMiembro(e.target.value)}>
+                                    <option value="">Elegí un contacto...</option>
+                                    {contactos.filter((u) => !miembros.some((m) => m.id === u.id)).map((u) => (
+                                        <option key={u.id} value={u.id}>@{u.username}</option>
+                                    ))}
+                                </select>
+                                <button className="boton boton-secundario" onClick={agregarMiembro}>Agregar al grupo</button>
+                            </div>
+                        )}
+
+                        {soyMiembro && abierto.ownerId !== yo?.id && (
+                            <button className="boton boton-secundario" onClick={salirDelGrupo}>🚪 Salir del grupo</button>
+                        )}
+                        {puedoAdministrar && (
+                            <button className="boton boton-rojo" onClick={eliminarGrupo}>🗑️ Eliminar grupo</button>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

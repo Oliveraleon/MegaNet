@@ -2,6 +2,14 @@ const Seguidores = require("../models/Seguidores.models.js");
 const Amistades = require("../models/Amistades.models.js");
 const MiembrosGrupo = require("../models/MiembrosGrupo.models.js");
 const MiembrosServidor = require("../models/MiembrosServidor.models.js");
+const { Op } = require("sequelize");
+const Usuarios = require("../models/Usuarios.models.js");
+const Publicaciones = require("../models/Publicaciones.models.js");
+const Comentarios = require("../models/Comentarios.models.js");
+const Reacciones = require("../models/Reacciones.models.js");
+const Mensajes = require("../models/Mensajes.models.js");
+const Eventos = require("../models/Eventos.models.js");
+const Notificaciones = require("../models/Notificaciones.models.js");
 
 const obtenerSeguidos = async (userId) => {
     const relaciones = await Seguidores.findAll({ 
@@ -93,7 +101,51 @@ const textoValido = (content) => {
     return content && content.trim() !== "";
 };
 
+// ---------- Agregado: admin, privacidad, notificaciones y borrar usuario ----------
+
+// true si el usuario logueado es administrador (el rol viaja dentro del token)
+const esAdmin = (usuario) => {
+    return usuario && usuario.rol === "admin";
+};
+
+// Decide si un usuario puede ver una publicacion segun su privacidad
+const puedeVerPost = (post, userId, amigos) => {
+    if (post.userId === userId) return true;
+    if (post.privacy === "private") return false;
+    if (post.privacy === "friends") return amigos.includes(post.userId);
+    return true;
+};
+
+// Crea un aviso para la campanita
+const notificar = async (userId, texto, link) => {
+    await Notificaciones.create({ userId: userId, texto: texto, link: link });
+};
+
+// Borra un usuario y todo lo que depende de el (para no romper las claves foraneas)
+const borrarUsuario = async (userId) => {
+    const posts = await Publicaciones.findAll({ where: { userId: userId } });
+    const idsPosts = [];
+    for (let i = 0; i < posts.length; i++) {
+        idsPosts.push(posts[i].id);
+    }
+    await Reacciones.destroy({ where: { [Op.or]: [{ postId: idsPosts }, { userId: userId }] } });
+    await Comentarios.destroy({ where: { [Op.or]: [{ postId: idsPosts }, { userId: userId }] } });
+    await Publicaciones.destroy({ where: { userId: userId } });
+    await Seguidores.destroy({ where: { [Op.or]: [{ followerId: userId }, { followedId: userId }] } });
+    await Amistades.destroy({ where: { [Op.or]: [{ senderId: userId }, { receiverId: userId }] } });
+    await Mensajes.destroy({ where: { [Op.or]: [{ senderId: userId }, { receiverId: userId }] } });
+    await MiembrosGrupo.destroy({ where: { userId: userId } });
+    await MiembrosServidor.destroy({ where: { userId: userId } });
+    await Eventos.destroy({ where: { creadorId: userId } });
+    await Notificaciones.destroy({ where: { userId: userId } });
+    await Usuarios.destroy({ where: { id: userId } });
+};
+
 module.exports = {
+    esAdmin,
+    puedeVerPost,
+    notificar,
+    borrarUsuario,
     obtenerSeguidos,
     obtenerSeguidoresIds,
     obtenerAmigos,

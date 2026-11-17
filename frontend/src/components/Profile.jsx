@@ -163,7 +163,7 @@ function Profile(){
 
         try {
             const token = localStorage.getItem("token");
-            const res = await fetch(`http://localhost:3000/auth/publicaciones/${postAEliminar}`, {
+            const res = await fetch(`http://localhost:3000/posts/publicaciones/${postAEliminar}`, {
                 method: "DELETE",
                 headers: { "Authorization": `Bearer ${token}` }
             });

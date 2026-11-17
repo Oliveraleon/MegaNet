@@ -1,10 +1,11 @@
 const { Op } = require("sequelize");
 const { Usuarios, Publicaciones, Seguidores, Amistades } = require("../models");
+const User = Usuarios; // alias: las funciones de amistad usan el nombre User
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 const nodemailer = require('nodemailer')
 const { agregarDatos } = require("./Post.controller.js");
-const { obtenerSeguidos, obtenerSeguidoresIds, obtenerAmigos, buscarAmistad, agregarRelacion } = require("../utilities/utilidades.js");
+const { obtenerSeguidos, obtenerSeguidoresIds, obtenerAmigos, buscarAmistad, agregarRelacion, puedeVerPost, notificar, borrarUsuario } = require("../utilities/utilidades.js");
     
 const JWT_SECRET = "clave_secreta_meganet";
 
@@ -115,27 +116,30 @@ const getFeed = async (req, res) => {
         }
 
         const seguidos = await obtenerSeguidos(usuarioActual.id);
+        const amigos = await obtenerAmigos(usuarioActual.id);
 
-        if (!seguidos || seguidos.length === 0) {
-            return res.status(200).json({
-                tipo: "registrado",
-                posts: []
-            });
-        }
-
-        const posts = await Publicaciones.findAll({
+        // Mis publicaciones + las de la gente que sigo
+        const todos = await Publicaciones.findAll({
             where: {
-                userId: seguidos
+                userId: [...seguidos, usuarioActual.id]
             },
             include: incluirAutor,
             order: [["creationDate", "DESC"]],
         });
 
+        // Se filtran segun la privacidad de cada publicacion
+        const posts = [];
+        for (let i = 0; i < todos.length; i++) {
+            if (puedeVerPost(todos[i], usuarioActual.id, amigos)) {
+                posts.push(todos[i]);
+            }
+        }
+
         const lista = await agregarDatos(posts, usuarioActual.id);
 
         return res.status(200).json({
             tipo: "registrado",
-            posts: agregarRelacion(lista, seguidos, [], [])
+            posts: agregarRelacion(lista, seguidos, [], amigos)
         });
 
     } catch (error) {
@@ -182,13 +186,17 @@ const seguir = async (req, res) => {
             where: { followerId: req.usuario.id, followedId: otroId },
         });
 
-
         if (!seguimiento) {
             seguimiento = await Seguidores.create({ 
                 followerId: req.usuario.id, 
                 followedId: otroId, 
                 status: estadoInicial 
             });
+            const yo = await Usuarios.findByPk(req.usuario.id);
+            const textoAviso = estadoInicial === "pendiente"
+                ? "➕ @" + yo.username + " quiere seguirte (solicitud pendiente)"
+                : "➕ @" + yo.username + " empezó a seguirte";
+            await notificar(otroId, textoAviso, "/profile/" + req.usuario.id);
         } else {
             seguimiento.status = estadoInicial;
             await seguimiento.save();
@@ -320,16 +328,8 @@ const eliminarCuenta = async (req,res)=>{
         if(!user){
             return res.status(404).json({message:"Usuario no encontrado"})
         }
-        await Publicaciones.destroy({ where: { userId: userId } });
-        await Seguidores.destroy({
-            where:{
-                [Op.or]:[
-                    {followerId: userId},
-                    {followedId: userId}
-                ]
-            }
-        });
-        await user.destroy()
+        // Borra el usuario y todo lo suyo (posts, mensajes, amistades, grupos...)
+        await borrarUsuario(userId);
         res.status(200).json({ message: "Cuenta eliminada correctamente" });
     }catch(error){
         console.error("Error al eliminar la cuenta:", error);
@@ -512,6 +512,8 @@ const enviarSolicitud = async (req, res) => {
         }
 
         await Amistades.create({ senderId: req.usuario.id, receiverId: otroId });
+        const yo = await User.findByPk(req.usuario.id);
+        await notificar(otroId, "🤝 @" + yo.username + " te envió una solicitud de amistad", "/profile/" + req.usuario.id);
         res.status(201).json({ message: "Solicitud enviada a " + otroUsuario.username });
     } catch (error) {
         res.status(500).json({ message: "Error al enviar la solicitud", error: error.message });
@@ -531,6 +533,8 @@ const aceptarSolicitud = async (req, res) => {
 
         solicitud.status = "aceptada";
         await solicitud.save();
+        const yo = await User.findByPk(req.usuario.id);
+        await notificar(otroId, "🎉 @" + yo.username + " aceptó tu solicitud de amistad", "/profile/" + req.usuario.id);
         res.status(200).json({ message: "Ahora son amigos" });
     } catch (error) {
         res.status(500).json({ message: "Error al aceptar la solicitud", error: error.message });
@@ -545,7 +549,21 @@ const eliminarAmistad = async (req, res) => {
             return res.status(404).json({ message: "No existe amistad ni solicitud con esa persona" });
         }
 
+        const eranAmigos = relacion.status === "aceptada";
         await relacion.destroy();
+
+        // Si eran amigos, también se cortan los seguimientos, así no quedan como contactos
+        if (eranAmigos) {
+            await Seguidores.destroy({
+                where: {
+                    [Op.or]: [
+                        { followerId: req.usuario.id, followedId: otroId },
+                        { followerId: otroId, followedId: req.usuario.id },
+                    ],
+                },
+            });
+        }
+
         res.status(200).json({ message: "Listo" });
     } catch (error) {
         res.status(500).json({ message: "Error al eliminar la amistad", error: error.message });

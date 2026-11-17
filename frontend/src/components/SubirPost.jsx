@@ -19,6 +19,11 @@ function SubirPost() {
         return null
     }
 
+    if (!estaLogueado()) {
+        navigate("/login")
+        return null
+    }
+
     const publicar = async (e) => {
         e.preventDefault()
         setError("")

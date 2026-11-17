@@ -40,12 +40,16 @@ module.exports = { subirImagenMiddleware, carpeta }*/
 
 const multer = require("multer");
 const path = require("path");
+const fs = require("fs");
 
 const carpeta = path.join(__dirname, "..", "..", "uploads");
 
+// La carpeta uploads esta en el .gitignore: si no existe (por ejemplo al clonar el repo) se crea sola
+if (!fs.existsSync(carpeta)) fs.mkdirSync(carpeta);
+
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, "uploads/");
+        cb(null, carpeta);
     },
     filename: (req, file, cb) => {
         const nombreLimpio = file.originalname.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_.-]/g, "");
