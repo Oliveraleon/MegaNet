@@ -492,7 +492,7 @@ const enviarSolicitud = async (req, res) => {
         }
 
         await Amistades.create({ senderId: req.usuario.id, receiverId: otroId });
-        const yo = await User.findByPk(req.usuario.id);
+        const yo = await Usuarios.findByPk(req.usuario.id);
         await notificar(otroId, "🤝 @" + yo.username + " te envió una solicitud de amistad", "/profile/" + req.usuario.id);
         res.status(201).json({ message: "Solicitud enviada a " + otroUsuario.username });
     } catch (error) {
@@ -513,7 +513,7 @@ const aceptarSolicitud = async (req, res) => {
 
         solicitud.status = "aceptada";
         await solicitud.save();
-        const yo = await User.findByPk(req.usuario.id);
+        const yo = await Usuarios.findByPk(req.usuario.id);
         await notificar(otroId, "🎉 @" + yo.username + " aceptó tu solicitud de amistad", "/profile/" + req.usuario.id);
         res.status(200).json({ message: "Ahora son amigos" });
     } catch (error) {
