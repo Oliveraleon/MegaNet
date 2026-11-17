@@ -34,18 +34,13 @@ route.get("/profile", verificarToken, obtenerPerfil);
 route.patch("/profile", verificarToken, subirImagen, actualizarPerfil);
 route.get('/feed', tokenOpcional, getFeed);
 route.get('/usuarios', verificarToken, getUsuarios);
-
-// --- RUTAS DE SEGUIDORES (¡El orden estático va primero!) ---
 route.get('/seguidores/', verificarToken, getSeguidores);
-route.get('/seguidores/solicitudes', verificarToken, getSolicitudesPrivadas); // 👈 Movida arriba
+route.get('/seguidores/solicitudes', verificarToken, getSolicitudesPrivadas);
 route.post('/seguidores/:id/aceptar', verificarToken, aceptarSolicitudPrivada);
-route.get('/seguidores/:id', verificarToken, getSeguidores); // 👈 Movida abajo
+route.get('/seguidores/:id', verificarToken, getSeguidores);
 route.delete('/seguidores/:id/rechazar', verificarToken, rechazarSolicitudPrivada);
-
-// --- RUTAS DE SIGUIENDO ---
 route.get('/siguiendo/', verificarToken, getSiguiendo);
 route.get('/siguiendo/:id', verificarToken, getSiguiendo);
-
 route.post('/seguir/:id', verificarToken, seguir);
 route.delete('/seguir/:id', verificarToken, dejarDeSeguir);
 route.get("/buscar", verificarToken, buscarUser);

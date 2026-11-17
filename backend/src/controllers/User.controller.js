@@ -1,6 +1,5 @@
 const { Op } = require("sequelize");
 const { Usuarios, Publicaciones, Seguidores, Amistades } = require("../models");
-const User = Usuarios; // alias: las funciones de amistad usan el nombre User
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 const nodemailer = require('nodemailer')
@@ -96,7 +95,7 @@ const getFeed = async (req, res) => {
             {
                 model: Usuarios,
                 as: "autor",
-                attributes: ["id", "username", "profilePicture"] // 👈 Sin "privacidad" acá
+                attributes: ["id", "username", "profilePicture"]
             }
         ];
 
@@ -114,11 +113,8 @@ const getFeed = async (req, res) => {
                 posts: await agregarDatos(posts, null)
             });
         }
-
         const seguidos = await obtenerSeguidos(usuarioActual.id);
         const amigos = await obtenerAmigos(usuarioActual.id);
-
-        // Mis publicaciones + las de la gente que sigo
         const todos = await Publicaciones.findAll({
             where: {
                 userId: [...seguidos, usuarioActual.id]
@@ -127,7 +123,6 @@ const getFeed = async (req, res) => {
             order: [["creationDate", "DESC"]],
         });
 
-        // Se filtran segun la privacidad de cada publicacion
         const posts = [];
         for (let i = 0; i < todos.length; i++) {
             if (puedeVerPost(todos[i], usuarioActual.id, amigos)) {
@@ -328,7 +323,6 @@ const eliminarCuenta = async (req,res)=>{
         if(!user){
             return res.status(404).json({message:"Usuario no encontrado"})
         }
-        // Borra el usuario y todo lo suyo (posts, mensajes, amistades, grupos...)
         await borrarUsuario(userId);
         res.status(200).json({ message: "Cuenta eliminada correctamente" });
     }catch(error){
@@ -403,8 +397,6 @@ const reiniciarContraseña = async (req,res)=>{
 const verPerfil = async (req, res) => {
     try {
         const otroId = Number(req.params.id);
-        
-        // 1. Traemos al usuario incluyendo su campo "privacidad"
         const usuario = await Usuarios.findByPk(otroId, {
             attributes: ["id", "username", "description", "profilePicture", "profileBanner", "privacidad"],
         });
@@ -417,16 +409,10 @@ const verPerfil = async (req, res) => {
         const misSeguidores = await obtenerSeguidoresIds(req.usuario.id);
         const susSeguidos = await obtenerSeguidos(otroId);
         const susSeguidores = await obtenerSeguidoresIds(otroId);
-
-        // 2. Buscamos el estado exacto del seguimiento (en ambas direcciones)
         let estadoSeguimiento = "ninguna";
-
-        // ¿Lo sigo yo a él o le envié solicitud?
         const seguimientoEnviado = await Seguidores.findOne({
             where: { followerId: req.usuario.id, followedId: otroId }
         });
-
-        // ¿Me sigue él a mí o me envió solicitud a mí?
         const seguimientoRecibido = await Seguidores.findOne({
             where: { followerId: otroId, followedId: req.usuario.id }
         });
@@ -439,7 +425,6 @@ const verPerfil = async (req, res) => {
 
         const loSigoReal = seguimientoEnviado?.status === "aceptado";
 
-        // 3. Verificamos si tiene acceso a ver los posts
         const esPrivado = usuario.privacidad === "privado" || usuario.privacidad === "privada";
         const tieneAcceso = !esPrivado || esDueño || loSigoReal;
 
@@ -454,12 +439,10 @@ const verPerfil = async (req, res) => {
                 amistad = "recibida";
             }
         }
-
         const privacidad = ["public"];
         if (amistad === "amigos") {
             privacidad.push("friends");
         }
-
         let publicacionesConDatos = [];
         if (tieneAcceso) {
             const publicaciones = await Publicaciones.findAll({
@@ -468,12 +451,11 @@ const verPerfil = async (req, res) => {
             });
             publicacionesConDatos = await agregarDatos(publicaciones, req.usuario.id);
         }
-
         res.status(200).json({
             usuario,
             loSigo: loSigoReal,
             meSigue: misSeguidores.includes(otroId),
-            estadoSeguimiento, // Ahora devolverá "recibida" si él te mandó solicitud
+            estadoSeguimiento,
             seguidores: susSeguidores.length,
             seguidos: susSeguidos.length,
             amistad,
@@ -549,8 +531,6 @@ const eliminarAmistad = async (req, res) => {
 
         const eranAmigos = relacion.status === "aceptada";
         await relacion.destroy();
-
-        // Si eran amigos, también se cortan los seguimientos, así no quedan como contactos
         if (eranAmigos) {
             await Seguidores.destroy({
                 where: {
