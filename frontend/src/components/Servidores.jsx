@@ -3,6 +3,7 @@ import "./Chat.css"
 import { useEffect, useState } from "react"
 import { Navigate } from "react-router-dom"
 import { estaLogueado, getUsuario, esAdmin } from "../api/auth"
+import Calendario from "./Calendario"
 import axios from "axios"
 import VentanaMensajes from "./VentanaMensajes"
 import Avatar from "./Avatar"
@@ -21,6 +22,7 @@ function Servidores() {
     const [verCrear, setVerCrear] = useState(false)
     const [verOpciones, setVerOpciones] = useState(false)
     const [verMiembros, setVerMiembros] = useState(true)
+    const [verCalendario, setVerCalendario] = useState(false)
     const [nombreServidor, setNombreServidor] = useState("")
     const [nombreCanal, setNombreCanal] = useState("")
     const [invitado, setInvitado] = useState("")
@@ -144,6 +146,27 @@ function Servidores() {
         }
     }
 
+        const expulsarMiembro = async (m) => {
+        if (!confirm("¿Sacar a @" + m.username + " del servidor?")) return
+        try {
+            await axios.delete(API + "servidores/" + servidorId + "/miembros/" + m.id, config)
+            cargarServidor()
+        } catch (err) {
+            alert(err.response?.data?.message || "No se pudo sacar al miembro")
+        }
+    }
+
+    const pasarPropiedad = async (m) => {
+        if (!confirm("¿Pasarle la propiedad del servidor a @" + m.username + "?")) return
+        try {
+            await axios.put(API + "servidores/" + servidorId + "/propietario", { userId: m.id }, config)
+            cargarServidor()
+            cargarLista()
+        } catch (err) {
+            alert(err.response?.data?.message || "No se pudo pasar la propiedad")
+        }
+    }
+
     if (!estaLogueado()) return <Navigate to="/login" replace />
 
     const canal = datos?.canales.find((c) => c.id === canalId)
@@ -152,14 +175,23 @@ function Servidores() {
     const puedoAdministrar = datos && (soyDueno || esAdmin())
     const soyMiembro = datos && datos.miembros.some((m) => m.id === yo?.id)
 
-    const botonMiembros = datos && (
-        <button
-            className={verMiembros ? "boton-icono activo" : "boton-icono"}
-            onClick={() => setVerMiembros(!verMiembros)}
-            title={verMiembros ? "Ocultar miembros" : "Ver miembros"}
-        >
-            👥 <span className="contador">{datos.miembros.length}</span>
-        </button>
+        const botonMiembros = datos && (
+        <>
+            <button
+                className={verCalendario ? "boton-icono activo" : "boton-icono"}
+                onClick={() => setVerCalendario(!verCalendario)}
+                title="Calendario del servidor"
+            >
+                📅
+            </button>
+            <button
+                className={verMiembros ? "boton-icono activo" : "boton-icono"}
+                onClick={() => setVerMiembros(!verMiembros)}
+                title={verMiembros ? "Ocultar miembros" : "Ver miembros"}
+            >
+                👥 <span className="contador">{datos.miembros.length}</span>
+            </button>
+        </>
     )
 
     return (
@@ -245,6 +277,16 @@ function Servidores() {
                 )}
             </section>
 
+            {datos && verCalendario && (
+                <aside className="panel-calendario">
+                    <div className="panel-titulo">
+                        <h2>📅 Calendario</h2>
+                        <button className="boton-icono" onClick={() => setVerCalendario(false)} title="Cerrar">✕</button>
+                    </div>
+                    <Calendario key={servidorId} rutaEventos={"servidores/" + servidorId + "/eventos"} puedeModerar={puedoAdministrar} />
+                </aside>
+            )}
+
             {datos && verMiembros && (
                 <aside className="panel-miembros">
                     <div className="panel-titulo">
@@ -254,12 +296,18 @@ function Servidores() {
                     <div className="lista">
                         {datos.miembros.map((m) => (
                             <div key={m.id} className="miembro">
-                                <Avatar usuario={m} clase="avatar-mini" />
+                                <Avatar usuario={m} clase="avatar-mini" perfil />
                                 <span className="miembro-nombre">
                                     @{m.username}
                                     {m.id === yo?.id && <span className="texto-suave"> (vos)</span>}
                                 </span>
                                 {m.id === datos.servidor.ownerId && <span title="Creador">👑</span>}
+                                {puedoAdministrar && m.id !== datos.servidor.ownerId && (
+                                    <>
+                                        <button type="button" className="boton-chico" onClick={() => pasarPropiedad(m)} title="Pasarle la propiedad">👑</button>
+                                        <button type="button" className="boton-chico" onClick={() => expulsarMiembro(m)} title="Sacar del servidor">🚫</button>
+                                    </>
+                                )}
                             </div>
                         ))}
                     </div>

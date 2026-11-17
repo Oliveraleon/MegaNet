@@ -116,6 +116,16 @@ function Chat() {
         cargar()
     }
 
+    const expulsarMiembro = async (m) => {
+        if (!confirm("¿Sacar a @" + m.username + " del grupo?")) return
+        try {
+            await axios.delete(API + "grupos/" + abierto.id + "/miembros/" + m.id, config)
+            abrirGrupo({ id: abierto.id, name: abierto.nombre, ownerId: abierto.ownerId })
+        } catch (err) {
+            alert(err.response?.data?.message || "No se pudo sacar al miembro")
+        }
+    }
+
     const eliminarGrupo = async () => {
         if (!confirm("¿Eliminar el grupo " + abierto.nombre + " con todos sus mensajes y eventos?")) return
         try {
@@ -126,6 +136,18 @@ function Chat() {
             cargar()
         } catch (err) {
             alert(err.response?.data?.message || "No se pudo eliminar el grupo")
+        }
+    }
+
+    const pasarPropiedad = async (m) => {
+        if (!confirm("¿Pasarle la propiedad del grupo a @" + m.username + "?")) return
+        try {
+            await axios.put(API + "grupos/" + abierto.id + "/propietario", { userId: m.id }, config)
+            abrirGrupo({ id: abierto.id, name: abierto.nombre, ownerId: m.id })
+            const res = await axios.get(API + "grupos", config)
+            setGrupos(res.data.grupos)
+        } catch (err) {
+            alert(err.response?.data?.message || "No se pudo pasar la propiedad")
         }
     }
 
@@ -275,7 +297,7 @@ function Chat() {
                         url={url}
                         titulo={abierto.nombre}
                         subtitulo={esGrupo ? miembros.length + " miembros · " + miembros.map((m) => "@" + m.username).join(", ") : "Chat privado"}
-                        icono={esGrupo ? abierto.nombre[0].toUpperCase() : <Avatar usuario={abierto.usuario} />}
+                        icono={esGrupo ? abierto.nombre[0].toUpperCase() : <Avatar usuario={abierto.usuario} perfil />}
                         miembros={mencionables}
                         acciones={accionesGrupo}
                     />
@@ -288,7 +310,7 @@ function Chat() {
                         <h2>📅 Calendario</h2>
                         <button className="boton-icono" onClick={() => setVerCalendario(false)} title="Cerrar">✕</button>
                     </div>
-                    <Calendario key={abierto.id} grupoId={abierto.id} puedeModerar={puedoAdministrar} />
+                    <Calendario key={abierto.id} rutaEventos={"grupos/" + abierto.id + "/eventos"} puedeModerar={puedoAdministrar} />
                 </aside>
             )}
 
@@ -304,18 +326,22 @@ function Chat() {
 
                         <div className="campo">
                             <span>Miembros · {miembros.length}</span>
-                            <div className="lista-miembros">
                                 {miembros.map((m) => (
                                     <div key={m.id} className="miembro">
-                                        <Avatar usuario={m} clase="avatar-mini" />
+                                        <Avatar usuario={m} clase="avatar-mini" perfil />
                                         <span className="miembro-nombre">
                                             @{m.username}
                                             {m.id === yo?.id && <span className="texto-suave"> (vos)</span>}
                                         </span>
                                         {m.id === abierto.ownerId && <span title="Creador">👑</span>}
+                                        {puedoAdministrar && m.id !== abierto.ownerId && (
+                                            <>
+                                                <button type="button" className="boton-chico" onClick={() => pasarPropiedad(m)}>👑 Dueño</button>
+                                                <button type="button" className="boton-chico" onClick={() => expulsarMiembro(m)}>🚫 Sacar</button>
+                                            </>
+                                        )}
                                     </div>
                                 ))}
-                            </div>
                         </div>
 
                         {puedoAdministrar && (

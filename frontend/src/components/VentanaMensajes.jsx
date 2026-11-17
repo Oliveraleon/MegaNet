@@ -190,7 +190,7 @@ function VentanaMensajes({ url, titulo, subtitulo, icono, miembros = [], accione
                                 {nuevoDia && <div className="separador-dia"><span>{textoDia(m.creationDate)}</span></div>}
 
                                 <div className={fila}>
-                                    {!esMio && (seguido ? <div className="avatar-espacio" /> : <Avatar usuario={autor} clase="avatar-mini" />)}
+                                    {!esMio && (seguido ? <div className="avatar-espacio" /> : <Avatar usuario={autor} clase="avatar-mini" perfil />)}
 
                                     <div className={clase}>
                                         {!esMio && !seguido && <strong>@{autor.username}</strong>}

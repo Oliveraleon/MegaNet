@@ -1,33 +1,59 @@
+
 const { Op } = require("sequelize");
 const Notificaciones = require("../models/Notificaciones.models.js");
 const Eventos = require("../models/Eventos.models.js");
 const Grupos = require("../models/Grupos.models.js");
 const MiembrosGrupo = require("../models/MiembrosGrupo.models.js");
+const Servidores = require("../models/Servidores.models.js");
+const MiembrosServidor = require("../models/MiembrosServidor.models.js");
 
-// Crea un recordatorio para los eventos de mis grupos que pasan en las proximas 24 horas
+// Crea un recordatorio para los eventos de mis grupos y servidores que pasan en las proximas 24 horas
 const crearRecordatorios = async (userId) => {
-    const filas = await MiembrosGrupo.findAll({ where: { userId: userId } });
-    const ids = [];
-    for (let i = 0; i < filas.length; i++) {
-        ids.push(filas[i].grupoId);
+    const filasGrupos = await MiembrosGrupo.findAll({ where: { userId: userId } });
+    const idsGrupos = [];
+    for (let i = 0; i < filasGrupos.length; i++) {
+        idsGrupos.push(filasGrupos[i].grupoId);
+    }
+    const filasServidores = await MiembrosServidor.findAll({ where: { userId: userId } });
+    const idsServidores = [];
+    for (let i = 0; i < filasServidores.length; i++) {
+        idsServidores.push(filasServidores[i].servidorId);
     }
 
     const ahora = new Date();
     const manana = new Date(ahora.getTime() + 24 * 60 * 60 * 1000);
-    const eventos = await Eventos.findAll({
-        where: { grupoId: ids, fecha: { [Op.between]: [ahora, manana] } },
-    });
+    let eventos = [];
+    if (idsGrupos.length > 0) {
+        eventos = await Eventos.findAll({
+            where: { grupoId: idsGrupos, fecha: { [Op.between]: [ahora, manana] } },
+        });
+    }
+    if (idsServidores.length > 0) {
+        const deServidores = await Eventos.findAll({
+            where: { servidorId: idsServidores, fecha: { [Op.between]: [ahora, manana] } },
+        });
+        eventos = eventos.concat(deServidores);
+    }
 
     for (let i = 0; i < eventos.length; i++) {
         const yaExiste = await Notificaciones.findOne({ where: { userId: userId, eventoId: eventos[i].id } });
         if (!yaExiste) {
-            const grupo = await Grupos.findByPk(eventos[i].grupoId);
+            let lugar = "";
+            let link = "/chat";
+            if (eventos[i].grupoId) {
+                const grupo = await Grupos.findByPk(eventos[i].grupoId);
+                if (grupo) lugar = grupo.name;
+            } else {
+                const servidor = await Servidores.findByPk(eventos[i].servidorId);
+                if (servidor) lugar = servidor.name;
+                link = "/servidores";
+            }
             const hora = new Date(eventos[i].fecha).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", hour12: false });
             await Notificaciones.create({
                 userId: userId,
                 eventoId: eventos[i].id,
-                texto: "⏰ Recordatorio: " + eventos[i].titulo + " a las " + hora + " (" + grupo.name + ")",
-                link: "/chat",
+                texto: "⏰ Recordatorio: " + eventos[i].titulo + " a las " + hora + " (" + lugar + ")",
+                link: link,
             });
         }
     }

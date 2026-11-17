@@ -12,7 +12,9 @@ const Eventos = sequelize.define(
         },
         grupoId:{
             type: DataTypes.INTEGER,
-            allowNull: false,
+        },
+        servidorId:{
+            type: DataTypes.INTEGER,
         },
         creadorId:{
             type: DataTypes.INTEGER,

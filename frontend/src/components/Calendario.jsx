@@ -19,7 +19,7 @@ const textoHora = (fecha) => new Date(fecha).toLocaleTimeString("es-AR", { hour:
 
 const mismoDia = (a, b) => a.toDateString() === b.toDateString()
 
-function Calendario({ grupoId, puedeModerar }) {
+function Calendario({ rutaEventos, puedeModerar }) {
     const hoy = new Date()
     const inicioDeHoy = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate())
 
@@ -38,7 +38,7 @@ function Calendario({ grupoId, puedeModerar }) {
 
     const cargar = async () => {
         try {
-            const res = await axios.get(API + "grupos/" + grupoId + "/eventos", config)
+            const res = await axios.get(API + rutaEventos, config)
             setEventos(res.data.eventos)
         } catch (err) {
             setError(err.response?.data?.message || "No se pudo cargar el calendario")
@@ -47,7 +47,7 @@ function Calendario({ grupoId, puedeModerar }) {
 
     useEffect(() => {
         cargar()
-    }, [grupoId])
+    }, [rutaEventos])
 
     const eventosDel = (d) => eventos.filter((ev) => mismoDia(new Date(ev.fecha), d))
 
@@ -90,7 +90,7 @@ function Calendario({ grupoId, puedeModerar }) {
             return
         }
         try {
-            await axios.post(API + "grupos/" + grupoId + "/eventos", { titulo, descripcion, fecha: fecha.toISOString() }, config)
+            await axios.post(API + rutaEventos, { titulo, descripcion, fecha: fecha.toISOString() }, config)
             setTitulo("")
             setDescripcion("")
             setError("")

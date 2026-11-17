@@ -481,7 +481,21 @@ const eliminarAmistad = async (req, res) => {
             return res.status(404).json({ message: "No existe amistad ni solicitud con esa persona" });
         }
 
+        const eranAmigos = relacion.status === "aceptada";
         await relacion.destroy();
+
+        // Si eran amigos, también se cortan los seguimientos, así no quedan como contactos
+        if (eranAmigos) {
+            await Seguidores.destroy({
+                where: {
+                    [Op.or]: [
+                        { followerId: req.usuario.id, followedId: otroId },
+                        { followerId: otroId, followedId: req.usuario.id },
+                    ],
+                },
+            });
+        }
+
         res.status(200).json({ message: "Listo" });
     } catch (error) {
         res.status(500).json({ message: "Error al eliminar la amistad", error: error.message });

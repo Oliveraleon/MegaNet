@@ -470,6 +470,7 @@ const eliminarServidor = async (req, res) => {
             ids.push(canales[i].id);
         }
         await Mensajes.destroy({ where: { canalId: ids } });
+        await Eventos.destroy({ where: { servidorId: servidorId } });
         await Canales.destroy({ where: { servidorId: servidorId } });
         await MiembrosServidor.destroy({ where: { servidorId: servidorId } });
         await servidor.destroy();
@@ -582,10 +583,19 @@ const eliminarEvento = async (req, res) => {
         if (!evento) {
             return res.status(404).json({ message: "El evento no existe" });
         }
-        const grupo = await Grupos.findByPk(evento.grupoId);
+
+        let duenoId = null;
+        if (evento.grupoId) {
+            const grupo = await Grupos.findByPk(evento.grupoId);
+            if (grupo) duenoId = grupo.ownerId;
+        } else if (evento.servidorId) {
+            const servidor = await Servidores.findByPk(evento.servidorId);
+            if (servidor) duenoId = servidor.ownerId;
+        }
+
         const esCreador = evento.creadorId === req.usuario.id;
-        if (!esCreador && !puedeAdministrar(grupo.ownerId, req.usuario)) {
-            return res.status(403).json({ message: "Solo quien creó el evento, el dueño del grupo o un admin pueden borrarlo" });
+        if (!esCreador && !puedeAdministrar(duenoId, req.usuario)) {
+            return res.status(403).json({ message: "Solo quien creó el evento, el dueño o un admin pueden borrarlo" });
         }
 
         await Notificaciones.destroy({ where: { eventoId: evento.id } });
@@ -593,6 +603,181 @@ const eliminarEvento = async (req, res) => {
         res.status(200).json({ message: "Evento eliminado" });
     } catch (error) {
         res.status(500).json({ message: "Error al eliminar el evento", error: error.message });
+    }
+};
+
+// ---------- Calendario de servidores ----------
+
+const getEventosServidor = async (req, res) => {
+    try {
+        const servidorId = Number(req.params.id);
+        if (!(await puedeVerServidor(servidorId, req.usuario))) {
+            return res.status(403).json({ message: "No sos miembro de este servidor" });
+        }
+
+        const eventos = await Eventos.findAll({
+            where: { servidorId: servidorId },
+            include: [{ model: User, as: "creador", attributes: ["id", "username", "profilePicture"] }],
+            order: [["fecha", "ASC"]],
+        });
+        res.status(200).json({ eventos });
+    } catch (error) {
+        res.status(500).json({ message: "Error al obtener los eventos", error: error.message });
+    }
+};
+
+const crearEventoServidor = async (req, res) => {
+    try {
+        const servidorId = Number(req.params.id);
+        const { titulo, descripcion, fecha } = req.body;
+        if (!(await puedeVerServidor(servidorId, req.usuario))) {
+            return res.status(403).json({ message: "No sos miembro de este servidor" });
+        }
+        if (!textoValido(titulo)) {
+            return res.status(400).json({ message: "El evento necesita un título" });
+        }
+        const cuando = new Date(fecha);
+        if (!fecha || isNaN(cuando.getTime())) {
+            return res.status(400).json({ message: "Elegí una fecha y hora válidas" });
+        }
+
+        const evento = await Eventos.create({
+            servidorId: servidorId,
+            creadorId: req.usuario.id,
+            titulo: titulo.trim(),
+            descripcion: descripcion ? descripcion.trim() : null,
+            fecha: cuando,
+        });
+
+        const servidor = await Servidores.findByPk(servidorId);
+        const filas = await MiembrosServidor.findAll({ where: { servidorId: servidorId } });
+        const texto = "📅 Nuevo evento en " + servidor.name + ": " + evento.titulo + " (" +
+            cuando.toLocaleDateString("es-AR") + " " +
+            cuando.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", hour12: false }) + ")";
+        for (let i = 0; i < filas.length; i++) {
+            if (filas[i].userId !== req.usuario.id) {
+                await notificar(filas[i].userId, texto, "/servidores");
+            }
+        }
+        res.status(201).json({ message: "Evento creado", evento });
+    } catch (error) {
+        res.status(500).json({ message: "Error al crear el evento", error: error.message });
+    }
+};
+
+// ---------- Sacar miembros y pasar la propiedad ----------
+
+const eliminarMiembroGrupo = async (req, res) => {
+    try {
+        const grupoId = Number(req.params.id);
+        const userId = Number(req.params.userId);
+
+        const grupo = await Grupos.findByPk(grupoId);
+        if (!grupo) {
+            return res.status(404).json({ message: "El grupo no existe" });
+        }
+        if (!puedeAdministrar(grupo.ownerId, req.usuario)) {
+            return res.status(403).json({ message: "Solo el propietario o un admin pueden sacar miembros" });
+        }
+        if (userId === grupo.ownerId) {
+            return res.status(400).json({ message: "No se puede sacar al propietario. Pasale la propiedad a otra persona primero" });
+        }
+
+        const miembro = await MiembrosGrupo.findOne({ where: { grupoId: grupoId, userId: userId } });
+        if (!miembro) {
+            return res.status(404).json({ message: "Esa persona no es miembro del grupo" });
+        }
+
+        await miembro.destroy();
+        await notificar(userId, "🚫 Te sacaron del grupo " + grupo.name, "/chat");
+        res.status(200).json({ message: "Miembro eliminado del grupo" });
+    } catch (error) {
+        res.status(500).json({ message: "Error al eliminar el miembro", error: error.message });
+    }
+};
+
+const pasarPropiedadGrupo = async (req, res) => {
+    try {
+        const grupoId = Number(req.params.id);
+        const nuevoId = Number(req.body.userId);
+
+        const grupo = await Grupos.findByPk(grupoId);
+        if (!grupo) {
+            return res.status(404).json({ message: "El grupo no existe" });
+        }
+        if (!puedeAdministrar(grupo.ownerId, req.usuario)) {
+            return res.status(403).json({ message: "Solo el propietario o un admin pueden pasar la propiedad" });
+        }
+        if (nuevoId === grupo.ownerId) {
+            return res.status(400).json({ message: "Esa persona ya es la propietaria" });
+        }
+        if (!(await esMiembroGrupo(grupoId, nuevoId))) {
+            return res.status(400).json({ message: "La nueva propietaria tiene que ser miembro del grupo" });
+        }
+
+        grupo.ownerId = nuevoId;
+        await grupo.save();
+        await notificar(nuevoId, "👑 Ahora sos el propietario del grupo " + grupo.name, "/chat");
+        res.status(200).json({ message: "Propiedad del grupo transferida" });
+    } catch (error) {
+        res.status(500).json({ message: "Error al pasar la propiedad", error: error.message });
+    }
+};
+
+const eliminarMiembroServidor = async (req, res) => {
+    try {
+        const servidorId = Number(req.params.id);
+        const userId = Number(req.params.userId);
+
+        const servidor = await Servidores.findByPk(servidorId);
+        if (!servidor) {
+            return res.status(404).json({ message: "El servidor no existe" });
+        }
+        if (!puedeAdministrar(servidor.ownerId, req.usuario)) {
+            return res.status(403).json({ message: "Solo el propietario o un admin pueden sacar miembros" });
+        }
+        if (userId === servidor.ownerId) {
+            return res.status(400).json({ message: "No se puede sacar al propietario. Pasale la propiedad a otra persona primero" });
+        }
+
+        const miembro = await buscarMiembroServidor(servidorId, userId);
+        if (!miembro) {
+            return res.status(404).json({ message: "Esa persona no es miembro del servidor" });
+        }
+
+        await miembro.destroy();
+        await notificar(userId, "🚫 Te sacaron del servidor " + servidor.name, "/servidores");
+        res.status(200).json({ message: "Miembro eliminado del servidor" });
+    } catch (error) {
+        res.status(500).json({ message: "Error al eliminar el miembro", error: error.message });
+    }
+};
+
+const pasarPropiedadServidor = async (req, res) => {
+    try {
+        const servidorId = Number(req.params.id);
+        const nuevoId = Number(req.body.userId);
+
+        const servidor = await Servidores.findByPk(servidorId);
+        if (!servidor) {
+            return res.status(404).json({ message: "El servidor no existe" });
+        }
+        if (!puedeAdministrar(servidor.ownerId, req.usuario)) {
+            return res.status(403).json({ message: "Solo el propietario o un admin pueden pasar la propiedad" });
+        }
+        if (nuevoId === servidor.ownerId) {
+            return res.status(400).json({ message: "Esa persona ya es la propietaria" });
+        }
+        if (!(await buscarMiembroServidor(servidorId, nuevoId))) {
+            return res.status(400).json({ message: "La nueva propietaria tiene que ser miembro del servidor" });
+        }
+
+        servidor.ownerId = nuevoId;
+        await servidor.save();
+        await notificar(nuevoId, "👑 Ahora sos el propietario del servidor " + servidor.name, "/servidores");
+        res.status(200).json({ message: "Propiedad del servidor transferida" });
+    } catch (error) {
+        res.status(500).json({ message: "Error al pasar la propiedad", error: error.message });
     }
 };
 
@@ -621,5 +806,11 @@ module.exports = {
     eliminarMensaje,
     getEventos,
     crearEvento,
-    eliminarEvento
+    eliminarEvento,
+    getEventosServidor,
+    crearEventoServidor,
+    eliminarMiembroGrupo,
+    pasarPropiedadGrupo,
+    eliminarMiembroServidor,
+    pasarPropiedadServidor
 };
